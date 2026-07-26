@@ -1,0 +1,275 @@
+require('dotenv').config();
+const express = require('express');
+const cors = require('cors');
+const path = require('path');
+const fs = require('fs');
+
+const { getTableData, writeTableData, insertRow } = require('./config/db');
+const { EXCHANGE_RATE } = require('./config/currency');
+
+const app = express();
+
+// Middlewares
+app.use(cors());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Serve uploaded static files
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// Routes Hookup
+app.use('/api/auth', require('./routes/authRoutes'));
+app.use('/api/products', require('./routes/productRoutes'));
+app.use('/api/categories', require('./routes/categoryRoutes'));
+app.use('/api/cart', require('./routes/cartRoutes'));
+app.use('/api/wishlist', require('./routes/wishlistRoutes'));
+app.use('/api/orders', require('./routes/orderRoutes'));
+app.use('/api/contact', require('./routes/contactRoutes'));
+app.use('/api/admin', require('./routes/adminRoutes'));
+app.use('/api/banner', require('./routes/bannerRoutes'));
+app.use('/api/payment', require('./routes/paymentRoutes'));
+app.use('/api/shipping', require('./routes/shippingRoutes'));
+app.use('/api/webhook', require('./routes/webhookRoutes'));
+
+// Seed Database if empty
+function seedDatabase() {
+  try {
+    const categories = getTableData('categories.xlsx');
+    const products = getTableData('products.xlsx');
+    
+    // Seed Categories
+    if (categories.length === 0) {
+      const defaultCategories = [
+        {
+          id: '1',
+          name: 'Bangles',
+          description: 'Sleek luxury gold, silver and traditional bridal bangles.',
+          image: 'https://images.unsplash.com/photo-1611591437281-460bfbe1220a?w=600&auto=format&fit=crop&q=80',
+          createdAt: new Date().toISOString()
+        },
+        {
+          id: '2',
+          name: 'Earrings',
+          description: 'Timeless diamond solitaires, gold studs, and elegant drops.',
+          image: 'https://images.unsplash.com/photo-1635767798638-3e25273a8236?w=600&auto=format&fit=crop&q=80',
+          createdAt: new Date().toISOString()
+        },
+        {
+          id: '3',
+          name: 'Rings',
+          description: 'Engagement bands, luxury solitaires, and custom rings.',
+          image: 'https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=600&auto=format&fit=crop&q=80',
+          createdAt: new Date().toISOString()
+        },
+        {
+          id: '4',
+          name: 'Necklaces',
+          description: 'Luxury pendants, gold chokers, and diamond chains.',
+          image: 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=600&auto=format&fit=crop&q=80',
+          createdAt: new Date().toISOString()
+        },
+        {
+          id: '5',
+          name: 'Watches',
+          description: 'Premium statement timepieces and chronographs.',
+          image: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&auto=format&fit=crop&q=80',
+          createdAt: new Date().toISOString()
+        }
+      ];
+      writeTableData('categories.xlsx', defaultCategories);
+      console.log('Seeded categories database.');
+    }
+    
+    // Seed Products
+    if (products.length === 0) {
+      const defaultProducts = [
+        {
+          id: '1',
+          name: 'Aura Diamond Solitaire Ring',
+          description: 'A classic 18k white gold band featuring an exquisite 1.5 carat round brilliant diamond with maximum brilliance. Perfect for proposals and lifelong memories.',
+          price: 2499,
+          discountPrice: 1999,
+          category: 'Rings',
+          stock: 12,
+          images: [
+            'https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=600&auto=format&fit=crop&q=80',
+            'https://images.unsplash.com/photo-1543294001-f7cbfe92237e?w=600&auto=format&fit=crop&q=80'
+          ],
+          isTrending: true,
+          isBestSeller: true,
+          isFeatured: true,
+          isNewArrival: false,
+          limitedOffer: true,
+          ratings: 0.0,
+          reviews: [],
+          createdAt: new Date().toISOString()
+        },
+        {
+          id: '2',
+          name: 'Heavy Kashmiri Ghungroo Bangles',
+          description: 'Exquisitely handcrafted traditional bangles with micro-etched patterns and delicate silver bells (ghungroos) that chime softly with movement. Plated in premium 22k gold.',
+          price: 999,
+          discountPrice: 550,
+          category: 'Bangles',
+          stock: 24,
+          images: [
+            'https://images.unsplash.com/photo-1611591437281-460bfbe1220a?w=600&auto=format&fit=crop&q=80',
+            'https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?w=600&auto=format&fit=crop&q=80'
+          ],
+          isTrending: true,
+          isBestSeller: false,
+          isFeatured: true,
+          isNewArrival: true,
+          limitedOffer: false,
+          ratings: 0.0,
+          reviews: [],
+          createdAt: new Date().toISOString()
+        },
+        {
+          id: '3',
+          name: 'Cascade Emerald Drop Earrings',
+          description: 'A striking pair of dangle earrings featuring pear-cut Colombian emeralds framed by brilliant micro-pave diamonds, set in 18k yellow gold.',
+          price: 1599,
+          discountPrice: 1399,
+          category: 'Earrings',
+          stock: 8,
+          images: [
+            'https://images.unsplash.com/photo-1635767798638-3e25273a8236?w=600&auto=format&fit=crop&q=80'
+          ],
+          isTrending: false,
+          isBestSeller: true,
+          isFeatured: true,
+          isNewArrival: true,
+          limitedOffer: true,
+          ratings: 0.0,
+          reviews: [],
+          createdAt: new Date().toISOString()
+        },
+        {
+          id: '4',
+          name: 'Infinity Gold Pendant Necklace',
+          description: 'An elegant minimalist infinity-shaped gold wire frame adorned with micro-diamonds, hanging from a delicate 18k solid gold chain. Adjustable length.',
+          price: 890,
+          discountPrice: 750,
+          category: 'Necklaces',
+          stock: 15,
+          images: [
+            'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=600&auto=format&fit=crop&q=80',
+            'https://images.unsplash.com/photo-1617038260897-41a1f14a8ca0?w=600&auto=format&fit=crop&q=80'
+          ],
+          isTrending: true,
+          isBestSeller: false,
+          isFeatured: false,
+          isNewArrival: true,
+          limitedOffer: false,
+          ratings: 0.0,
+          reviews: [],
+          createdAt: new Date().toISOString()
+        },
+        {
+          id: '5',
+          name: 'Grand Chrono Leather Watch',
+          description: 'Sophisticated luxury watch featuring a genuine alligator leather strap, sapphire crystal glass, and a sleek black chronograph dial with gold-accented hour markers.',
+          price: 1850,
+          discountPrice: 1490,
+          category: 'Watches',
+          stock: 6,
+          images: [
+            'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&auto=format&fit=crop&q=80',
+            'https://images.unsplash.com/photo-1547996160-81dfa63595aa?w=600&auto=format&fit=crop&q=80'
+          ],
+          isTrending: false,
+          isBestSeller: true,
+          isFeatured: false,
+          isNewArrival: false,
+          limitedOffer: true,
+          ratings: 0.0,
+          reviews: [],
+          createdAt: new Date().toISOString()
+        },
+        {
+          id: '6',
+          name: 'Matcha Jhumka & Bangle Box',
+          description: 'A matching custom jewelry set containing matching micro-enameled pastel green Jhumka earrings and traditional silk thread bangles. Packed in a velvet storage box.',
+          price: 699,
+          discountPrice: 499,
+          category: 'Bangles',
+          stock: 30,
+          images: [
+            'https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?w=600&auto=format&fit=crop&q=80'
+          ],
+          isTrending: true,
+          isBestSeller: false,
+          isFeatured: true,
+          isNewArrival: true,
+          limitedOffer: false,
+          ratings: 0.0,
+          reviews: [],
+          createdAt: new Date().toISOString()
+        }
+      ];
+      // Convert seed prices from USD to INR
+      const defaultProductsConverted = defaultProducts.map(p => ({
+        ...p,
+        price: Math.round(Number(p.price) * EXCHANGE_RATE),
+        discountPrice: p.discountPrice ? Math.round(Number(p.discountPrice) * EXCHANGE_RATE) : null
+      }));
+      writeTableData('products.xlsx', defaultProductsConverted);
+      console.log('Seeded products database (in INR).');
+    }
+  } catch (error) {
+    console.error('Error seeding database:', error);
+  }
+}
+
+seedDatabase();
+
+// Migration: Convert existing products in products.xlsx from USD to INR if needed
+function migrateUSDToINR() {
+  try {
+    const products = getTableData('products.xlsx');
+    let needsMigration = false;
+    
+    const migrated = products.map(prod => {
+      // If price is stored in USD (e.g. < 5000), let's convert it to INR.
+      if (Number(prod.price) < 5000) {
+        prod.price = Math.round(Number(prod.price) * EXCHANGE_RATE);
+        if (prod.discountPrice) {
+          prod.discountPrice = Math.round(Number(prod.discountPrice) * EXCHANGE_RATE);
+        }
+        needsMigration = true;
+      }
+      return prod;
+    });
+
+    if (needsMigration) {
+      writeTableData('products.xlsx', migrated);
+      console.log(`Successfully migrated database prices to INR using exchange rate: 1 USD = ₹${EXCHANGE_RATE}`);
+    }
+  } catch (err) {
+    console.error('Error during currency migration:', err);
+  }
+}
+
+migrateUSDToINR();
+
+// Base Route
+app.get('/', (req, res) => {
+  res.json({ message: 'Welcome to BLC Premium Ecommerce API!' });
+});
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(err.status || 500).json({
+    message: err.message || 'Internal Server Error'
+  });
+});
+
+const PORT = process.env.PORT || 5000;
+const { startProgressionService } = require('./services/progressionService');
+
+app.listen(PORT, () => {
+  console.log(`Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
+  startProgressionService();
+});

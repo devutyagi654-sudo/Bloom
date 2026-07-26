@@ -1,0 +1,45 @@
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300..700;1,300..700&family=Poppins:ital,wght@0,100..900;1,100..900&family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply font-jakarta antialiased bg-[#F7E8DF] dark:bg-[#1E130D] text-[#4A3226] dark:text-[#F7E8DF] transition-colors duration-300;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-playfair tracking-wide text-[#4A3226] dark:text-white;
+  }
+}
+
+@layer components {
+  /* Premium luxury button utility */
+  .btn-luxury {
+    @apply rounded-full bg-gradient-to-r from-[#A86E4A] via-[#C98A63] to-[#F2CDBD] text-white px-6 py-3 font-semibold shadow-md transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:brightness-105 active:translate-y-0 active:shadow-md focus:outline-none focus:ring-2 focus:ring-[#C98A63]/50;
+  }
+  
+  /* Luxury product/collection card utility */
+  .card-luxury {
+    @apply rounded-2xl bg-[#F7E8DF]/60 dark:bg-[#241812]/70 border border-[#C98A63]/30 dark:border-[#C98A63]/25 shadow-sm backdrop-blur-sm transition-all duration-300 hover:scale-[1.01] hover:border-[#C98A63] hover:shadow-md;
+  }
+  
+  /* Luxury form input utility */
+  .input-luxury {
+    @apply rounded-xl bg-[#F4DDD2]/40 dark:bg-[#120a06]/40 border border-[#C98A63]/30 dark:border-[#C98A63]/25 text-[#4A3226] dark:text-[#F7E8DF] placeholder-[#4A3226]/50 dark:placeholder-[#F7E8DF]/40 focus:outline-none focus:ring-1 focus:ring-[#C98A63] focus:border-[#C98A63] transition-all duration-200;
+  }
+}
+
+/* Custom premium scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-neutral-100 dark:bg-neutral-950;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-neutral-300 dark:bg-neutral-800 rounded-full hover:bg-luxury-gold-500 transition-colors;
+}
