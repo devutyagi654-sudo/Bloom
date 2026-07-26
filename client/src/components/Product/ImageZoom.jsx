@@ -15,7 +15,7 @@ const ImageZoom = ({ images }) => {
   // Helper to resolve backend image paths vs absolute URLs
   const getFullUrl = (path) => {
     if (!path) return '';
-    return path.startsWith('http') ? path : `http://localhost:5000${path}`;
+    return path.startsWith('http') ? path : `${import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api', '') : 'http://localhost:5000'}${path}`;
   };
 
   const handleMouseMove = (e) => {

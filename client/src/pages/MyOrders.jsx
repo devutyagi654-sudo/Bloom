@@ -115,7 +115,7 @@ const MyOrders = () => {
                       <div className="flex items-center space-x-2">
                         {item.image && (
                           <img
-                            src={item.image.startsWith('http') ? item.image : `http://localhost:5000${item.image}`}
+                            src={item.image.startsWith('http') ? item.image : `${import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api', '') : 'http://localhost:5000'}${item.image}`}
                             alt={item.name}
                             className="w-10 h-12 object-cover rounded bg-neutral-200"
                           />

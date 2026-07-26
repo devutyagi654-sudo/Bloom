@@ -165,7 +165,7 @@ const ManageCategories = () => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {categories.map((cat) => {
-              const imgUrl = cat.image?.startsWith('http') ? cat.image : `http://localhost:5000${cat.image}`;
+              const imgUrl = cat.image?.startsWith('http') ? cat.image : `${import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api', '') : 'http://localhost:5000'}${cat.image}`;
               return (
                 <div
                   key={cat.id}
@@ -255,7 +255,7 @@ const ManageCategories = () => {
                   
                   {existingImage && !imageFile && (
                     <div className="w-16 h-16 rounded border overflow-hidden bg-neutral-100 mb-2">
-                      <img src={existingImage.startsWith('http') ? existingImage : `http://localhost:5000${existingImage}`} alt="Current" className="w-full h-full object-cover" />
+                      <img src={existingImage.startsWith('http') ? existingImage : `${import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api', '') : 'http://localhost:5000'}${existingImage}`} alt="Current" className="w-full h-full object-cover" />
                     </div>
                   )}
 

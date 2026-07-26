@@ -239,7 +239,7 @@ const ManageProducts = () => {
                   {products.map((prod) => {
                     const images = Array.isArray(prod.images) ? prod.images : [prod.images].filter(Boolean);
                     const firstImage = images.length > 0
-                      ? (images[0].startsWith('http') ? images[0] : `http://localhost:5000${images[0]}`)
+                      ? (images[0].startsWith('http') ? images[0] : `${import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api', '') : 'http://localhost:5000'}${images[0]}`)
                       : 'https://images.unsplash.com/photo-1543294001-f7cbfe92237e?w=100&auto=format&fit=crop&q=80';
                     return (
                       <tr key={prod.id} className="hover:bg-neutral-50/50 dark:hover:bg-neutral-900/40">
@@ -425,7 +425,7 @@ const ManageProducts = () => {
                     <label className="block text-[10px] font-bold uppercase tracking-widest text-neutral-400">Current Images</label>
                     <div className="flex flex-wrap gap-2">
                       {existingImages.map((img, index) => {
-                        const url = img.startsWith('http') ? img : `http://localhost:5000${img}`;
+                        const url = img.startsWith('http') ? img : `${import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api', '') : 'http://localhost:5000'}${img}`;
                         return (
                           <div key={index} className="relative w-16 h-20 bg-neutral-100 rounded border overflow-hidden">
                             <img src={url} alt={`Preview ${index}`} className="w-full h-full object-cover" />

@@ -45,7 +45,7 @@ const ProductCard = ({ product }) => {
   // Use product images: handles array, or fallback string, or default luxury placeholder
   let imageUrl = 'https://images.unsplash.com/photo-1543294001-f7cbfe92237e?w=500&auto=format&fit=crop&q=80';
   if (product.images && product.images.length > 0) {
-    imageUrl = product.images[0].startsWith('http') ? product.images[0] : `http://localhost:5000${product.images[0]}`;
+    imageUrl = product.images[0].startsWith('http') ? product.images[0] : `${import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api', '') : 'http://localhost:5000'}${product.images[0]}`;
   }
 
   return (
