@@ -2,7 +2,8 @@ const fs = require('fs');
 const path = require('path');
 const xlsx = require('xlsx');
 
-const DB_DIR = path.join(__dirname, '../database');
+const usePersistent = fs.existsSync('/data');
+const DB_DIR = usePersistent ? '/data/database' : path.join(__dirname, '../database');
 
 // Ensure database directory exists
 if (!fs.existsSync(DB_DIR)) {

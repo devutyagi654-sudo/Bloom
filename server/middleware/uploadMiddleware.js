@@ -2,7 +2,8 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 
-const uploadsDir = path.join(__dirname, '../uploads');
+const usePersistent = fs.existsSync('/data');
+const uploadsDir = usePersistent ? '/data/uploads' : path.join(__dirname, '../uploads');
 
 // Ensure uploads directory exists
 if (!fs.existsSync(uploadsDir)) {
@@ -39,7 +40,7 @@ const upload = multer({
 });
 
 // Banner directory and storage
-const bannersDir = path.join(__dirname, '../uploads/banners');
+const bannersDir = path.join(uploadsDir, 'banners');
 if (!fs.existsSync(bannersDir)) {
   fs.mkdirSync(bannersDir, { recursive: true });
 }

@@ -4,6 +4,9 @@ const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
 
+const migrateToPersistent = require('./scratch/migrate_to_persistent');
+migrateToPersistent();
+
 const { getTableData, writeTableData, insertRow } = require('./config/db');
 const { EXCHANGE_RATE } = require('./config/currency');
 
@@ -15,7 +18,9 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Serve uploaded static files
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+const usePersistent = fs.existsSync('/data');
+const uploadsStaticDir = usePersistent ? '/data/uploads' : path.join(__dirname, 'uploads');
+app.use('/uploads', express.static(uploadsStaticDir));
 
 // Routes Hookup
 app.use('/api/auth', require('./routes/authRoutes'));
