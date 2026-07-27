@@ -256,37 +256,90 @@ function migrateUSDToINR() {
   }
 }
 
-// One-time database migration: Rename category "Necklaces" to "Hamper"
+// One-time database migration: Rename category "Necklaces" to "Hamper" & standardize/deduplicate categories
 function migrateCategories() {
   try {
     const categories = getTableData('categories.xlsx');
     let catUpdated = false;
+
+    // Standardize category names
     categories.forEach(c => {
-      if (c.name === 'Necklaces') {
-        c.name = 'Hamper';
-        c.description = 'Premium curated luxury hampers and customized gift sets.';
+      if (c.name) {
+        const nameTrimmed = String(c.name).trim();
+        if (nameTrimmed.toLowerCase() === 'necklaces') {
+          c.name = 'Hamper';
+          c.description = 'Premium curated luxury hampers and customized gift sets.';
+          catUpdated = true;
+        } else if (nameTrimmed.toLowerCase() === 'bangles' && c.name !== 'Bangles') {
+          c.name = 'Bangles';
+          catUpdated = true;
+        } else if (nameTrimmed.toLowerCase() === 'rings' && c.name !== 'Rings') {
+          c.name = 'Rings';
+          catUpdated = true;
+        } else if (nameTrimmed.toLowerCase() === 'earrings' && c.name !== 'Earrings') {
+          c.name = 'Earrings';
+          catUpdated = true;
+        } else if (nameTrimmed.toLowerCase() === 'hamper' && c.name !== 'Hamper') {
+          c.name = 'Hamper';
+          catUpdated = true;
+        } else if (nameTrimmed.toLowerCase() === 'watches' && c.name !== 'Watches') {
+          c.name = 'Watches';
+          catUpdated = true;
+        }
+      }
+    });
+
+    // Deduplicate categories
+    const seen = new Set();
+    const uniqueCategories = [];
+    categories.forEach(c => {
+      const lowerName = String(c.name).toLowerCase().trim();
+      if (!seen.has(lowerName)) {
+        seen.add(lowerName);
+        uniqueCategories.push(c);
+      } else {
         catUpdated = true;
       }
     });
+
     if (catUpdated) {
-      writeTableData('categories.xlsx', categories);
-      console.log('[MIGRATION] Updated categories database: Necklaces -> Hamper.');
+      writeTableData('categories.xlsx', uniqueCategories);
+      console.log(`[MIGRATION] Standardized and deduplicated categories. Total unique categories: ${uniqueCategories.length}.`);
     }
 
     const products = getTableData('products.xlsx');
     let prodUpdated = false;
     products.forEach(p => {
-      if (p.category === 'Necklaces') {
-        p.category = 'Hamper';
-        prodUpdated = true;
+      if (p.category) {
+        const catClean = String(p.category).trim();
+        if (catClean.toLowerCase() === 'necklaces') {
+          p.category = 'Hamper';
+          prodUpdated = true;
+        } else if (catClean.toLowerCase() === 'bangles' && p.category !== 'Bangles') {
+          p.category = 'Bangles';
+          prodUpdated = true;
+        } else if (catClean.toLowerCase() === 'rings' && p.category !== 'Rings') {
+          p.category = 'Rings';
+          prodUpdated = true;
+        } else if (catClean.toLowerCase() === 'earrings' && p.category !== 'Earrings') {
+          p.category = 'Earrings';
+          prodUpdated = true;
+        } else if (catClean.toLowerCase() === 'hamper' && p.category !== 'Hamper') {
+          p.category = 'Hamper';
+          prodUpdated = true;
+        } else if (catClean.toLowerCase() === 'watches' && p.category !== 'Watches') {
+          p.category = 'Watches';
+          prodUpdated = true;
+        }
       }
     });
+
     if (prodUpdated) {
       writeTableData('products.xlsx', products);
-      console.log('[MIGRATION] Updated products database: Necklaces -> Hamper.');
+      console.log('[MIGRATION] Standardized product categories casing in database.');
     }
   } catch (err) {
-    console.error('[MIGRATION] Failed to run Necklaces to Hamper migration:', err);
+    console.error('[MIGRATION] Category and product migration failed:', err);
   }
 }
 

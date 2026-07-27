@@ -124,11 +124,10 @@ const Navbar = () => {
 
   return (
     <>
-      <nav className={`w-full h-20 border-b transition-all duration-300 ${
-        isScrolled 
-          ? 'bg-[#F7E8DF]/90 dark:bg-[#1E130D]/90 backdrop-blur-md shadow-sm border-[#C98A63]/20' 
+      <nav className={`w-full h-20 border-b transition-all duration-300 ${isScrolled
+          ? 'bg-[#F7E8DF]/90 dark:bg-[#1E130D]/90 backdrop-blur-md shadow-sm border-[#C98A63]/20'
           : 'bg-transparent border-transparent'
-      }`}>
+        }`}>
         <div className="max-w-[95%] sm:max-w-[92%] mx-auto h-full px-2 sm:px-4">
 
           {/* 3-Column Grid Layout to prevent overlaps and keep logo centered */}
@@ -148,15 +147,14 @@ const Navbar = () => {
               {/* Navigation links (Desktop only - hidden on mobile/tablet) */}
               <div className="hidden lg:flex items-center space-x-5 xl:space-x-7 h-full flex-nowrap whitespace-nowrap">
                 <Link
-                  to="/"
-                  className={`relative h-full flex items-center font-playfair text-base tracking-wider capitalize font-medium transition-colors px-1 ${
-                    isLinkActive('/') 
-                      ? 'text-[#4A3226] dark:text-white font-bold' 
+                  to="/shop?category=Bangles"
+                  className={`relative h-full flex items-center font-playfair text-base tracking-wider capitalize font-medium transition-colors px-1 ${isLinkActive('/shop', 'Bangles')
+                      ? 'text-[#4A3226] dark:text-white font-bold'
                       : 'text-[#4A3226]/80 dark:text-[#F7E8DF]/80 hover:text-[#C98A63] dark:hover:text-[#C98A63]'
-                  }`}
+                    }`}
                 >
-                  <span>Home</span>
-                  {isLinkActive('/') && (
+                  <span>Bangles</span>
+                  {isLinkActive('/shop', 'Bangles') && (
                     <motion.div
                       layoutId="activeIndicator"
                       className="absolute bottom-0 left-0 right-0 h-[2.5px] bg-[#C98A63]"
@@ -165,29 +163,22 @@ const Navbar = () => {
                   )}
                 </Link>
 
-                {categories.map((cat) => {
-                  const isActive = isLinkActive('/shop', cat.name);
-                  return (
-                    <Link
-                      key={cat.id || cat.name}
-                      to={`/shop?category=${encodeURIComponent(cat.name)}`}
-                      className={`relative h-full flex items-center font-playfair text-base tracking-wider capitalize font-medium transition-colors px-1 ${
-                        isActive 
-                          ? 'text-[#4A3226] dark:text-white font-bold' 
-                          : 'text-[#4A3226]/80 dark:text-[#F7E8DF]/80 hover:text-[#C98A63] dark:hover:text-[#C98A63]'
-                      }`}
-                    >
-                      <span>{cat.name}</span>
-                      {isActive && (
-                        <motion.div
-                          layoutId="activeIndicator"
-                          className="absolute bottom-0 left-0 right-0 h-[2.5px] bg-[#C98A63]"
-                          transition={{ type: 'spring', stiffness: 350, damping: 30 }}
-                        />
-                      )}
-                    </Link>
-                  );
-                })}
+                <Link
+                  to="/shop?category=Rings"
+                  className={`relative h-full flex items-center font-playfair text-base tracking-wider capitalize font-medium transition-colors px-1 ${isLinkActive('/shop', 'Rings')
+                      ? 'text-[#4A3226] dark:text-white font-bold'
+                      : 'text-[#4A3226]/80 dark:text-[#F7E8DF]/80 hover:text-[#C98A63] dark:hover:text-[#C98A63]'
+                    }`}
+                >
+                  <span>Rings</span>
+                  {isLinkActive('/shop', 'Rings') && (
+                    <motion.div
+                      layoutId="activeIndicator"
+                      className="absolute bottom-0 left-0 right-0 h-[2.5px] bg-[#C98A63]"
+                      transition={{ type: 'spring', stiffness: 350, damping: 30 }}
+                    />
+                  )}
+                </Link>
               </div>
             </div>
 
@@ -205,201 +196,240 @@ const Navbar = () => {
               </Link>
             </div>
 
-            {/* Right Column (col-span-1): Search & Icons */}
-            <div className="flex items-center justify-end space-x-1.5 sm:space-x-3">
-              {/* Search Bar (Desktop only - hidden on mobile/tablet) */}
-              <div className="hidden lg:block">
-                <form onSubmit={handleSearchSubmit} className="relative flex items-center w-36 xl:w-56 focus-within:w-44 xl:focus-within:w-64 transition-all duration-300">
+            {/* Right Column (col-span-1): Links & Search & Icons */}
+            <div className="flex items-center justify-end space-x-4 sm:space-x-6 h-full">
+              {/* Navigation links (Desktop only) */}
+              <div className="hidden lg:flex items-center space-x-5 xl:space-x-7 h-full flex-nowrap whitespace-nowrap">
+                <Link
+                  to="/shop?category=Hamper"
+                  className={`relative h-full flex items-center font-playfair text-base tracking-wider capitalize font-medium transition-colors px-1 ${isLinkActive('/shop', 'Hamper')
+                      ? 'text-[#4A3226] dark:text-white font-bold'
+                      : 'text-[#4A3226]/80 dark:text-[#F7E8DF]/80 hover:text-[#C98A63] dark:hover:text-[#C98A63]'
+                    }`}
+                >
+                  <span>Hamper</span>
+                  {isLinkActive('/shop', 'Hamper') && (
+                    <motion.div
+                      layoutId="activeIndicator"
+                      className="absolute bottom-0 left-0 right-0 h-[2.5px] bg-[#C98A63]"
+                      transition={{ type: 'spring', stiffness: 350, damping: 30 }}
+                    />
+                  )}
+                </Link>
+
+                <Link
+                  to="/shop?category=Watches"
+                  className={`relative h-full flex items-center font-playfair text-base tracking-wider capitalize font-medium transition-colors px-1 ${isLinkActive('/shop', 'Watches')
+                      ? 'text-[#4A3226] dark:text-white font-bold'
+                      : 'text-[#4A3226]/80 dark:text-[#F7E8DF]/80 hover:text-[#C98A63] dark:hover:text-[#C98A63]'
+                    }`}
+                >
+                  <span>Watches</span>
+                  {isLinkActive('/shop', 'Watches') && (
+                    <motion.div
+                      layoutId="absolute activeIndicator"
+                      className="absolute bottom-0 left-0 right-0 h-[2.5px] bg-[#C98A63]"
+                      transition={{ type: 'spring', stiffness: 350, damping: 30 }}
+                    />
+                  )}
+                </Link>
+              </div>
+
+              {/* Search Bar & Action Icons */}
+              <div className="flex items-center space-x-1.5 sm:space-x-3">
+                {/* Search Bar (Desktop only - hidden on mobile/tablet) */}
+                <div className="hidden lg:block">
+                  <form onSubmit={handleSearchSubmit} className="relative flex items-center w-36 xl:w-56 focus-within:w-44 xl:focus-within:w-64 transition-all duration-300">
+                    <input
+                      type="text"
+                      placeholder="What are you looking for?"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="w-full text-[10px] xl:text-[11px] py-2 pl-4 pr-14 bg-[#F4DDD2]/40 dark:bg-[#120a06]/40 border border-[#C98A63]/30 dark:border-[#C98A63]/25 rounded-full focus:outline-none focus:ring-1 focus:ring-[#C98A63] focus:border-[#C98A63] focus:bg-[#F4DDD2]/60 transition-all duration-300 font-medium text-[#4A3226] dark:text-[#F7E8DF] placeholder-[#4A3226]/50 dark:placeholder-[#F7E8DF]/45"
+                    />
+                    <div className="absolute right-3 flex items-center space-x-1.5 text-[#C98A63]">
+                      <button
+                        type="button"
+                        onClick={handleVoiceSearch}
+                        className={`p-0.5 hover:text-[#A86E4A] transition-colors ${isListening ? 'text-red-500 animate-pulse' : ''
+                          }`}
+                        title="Voice Search"
+                      >
+                        <Mic className="w-3 h-3 xl:w-3.5 xl:h-3.5" />
+                      </button>
+                      <button
+                        type="submit"
+                        className="p-0.5 hover:text-[#A86E4A] transition-colors"
+                        title="Search"
+                      >
+                        <Search className="w-3 h-3 xl:w-3.5 xl:h-3.5" />
+                      </button>
+                    </div>
+                  </form>
+                </div>
+
+                {/* Action Icons List */}
+                <div className="flex items-center space-x-1.5 sm:space-x-2">
+                  {/* Search Toggle Icon (Tablet/Mobile only - hidden on desktop) */}
+                  <button
+                    onClick={() => setIsSearchOpen(!isSearchOpen)}
+                    className="lg:hidden p-2 text-neutral-700 dark:text-neutral-300 hover:text-luxury-gold-600 dark:hover:text-luxury-gold-400 transition-all duration-300 hover:scale-110 focus:outline-none"
+                    title="Search"
+                  >
+                    <Search className="w-4.5 h-4.5" />
+                  </button>
+
+                  {/* Location Icon (Desktop only - hidden on tablet/mobile) */}
+                  <button
+                    onClick={() => setIsStoreModalOpen(true)}
+                    className="hidden lg:inline-flex p-2 text-neutral-700 dark:text-neutral-300 hover:text-luxury-gold-600 dark:hover:text-luxury-gold-400 transition-all duration-300 hover:scale-110 focus:outline-none"
+                    title="Store Locator"
+                  >
+                    <MapPin className="w-4.5 h-4.5 xl:w-5 xl:h-5" />
+                  </button>
+
+                  {/* Account / User Dropdown Toggler (Desktop/Tablet only - hidden on mobile) */}
+                  <div className="hidden md:block relative">
+                    <button
+                      onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
+                      className="p-2 text-neutral-700 dark:text-neutral-300 hover:text-luxury-gold-600 dark:hover:text-luxury-gold-400 transition-all duration-300 hover:scale-110 focus:outline-none"
+                      title="Account"
+                    >
+                      <User className="w-4.5 h-4.5 sm:w-5 sm:h-5" />
+                    </button>
+
+                    <AnimatePresence>
+                      {isProfileDropdownOpen && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                          transition={{ duration: 0.15 }}
+                          className="absolute right-0 mt-2.5 w-60 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl py-3 shadow-xl z-50 text-xs text-left"
+                        >
+                          {isAuthenticated ? (
+                            <>
+                              <div className="px-4 pb-2 mb-2 border-b border-neutral-100 dark:border-neutral-800">
+                                <p className="font-bold text-neutral-800 dark:text-neutral-150 truncate">{user?.fullName}</p>
+                                <p className="text-[10px] text-neutral-450 dark:text-neutral-500 truncate">{user?.email}</p>
+                              </div>
+                              {user?.role?.toUpperCase() === 'ADMIN' && (
+                                <Link
+                                  to="/admin"
+                                  className="flex items-center px-4 py-2 hover:bg-neutral-50 dark:hover:bg-neutral-800 hover:text-luxury-gold-600 dark:hover:text-luxury-gold-400 transition-colors font-semibold text-neutral-700 dark:text-neutral-300"
+                                >
+                                  <LayoutDashboard className="w-4 h-4 mr-2.5" />
+                                  Admin Dashboard
+                                </Link>
+                              )}
+                              <Link
+                                to="/orders"
+                                className="flex items-center px-4 py-2 hover:bg-neutral-50 dark:hover:bg-neutral-800 hover:text-luxury-gold-600 dark:hover:text-luxury-gold-400 transition-colors font-semibold text-neutral-700 dark:text-neutral-300"
+                              >
+                                <ShoppingCart className="w-4 h-4 mr-2.5" />
+                                My Orders
+                              </Link>
+                              <button
+                                onClick={handleLogout}
+                                className="flex items-center w-full text-left px-4 py-2 hover:bg-neutral-50 dark:hover:bg-neutral-800 text-red-600 font-semibold transition-colors"
+                              >
+                                <LogOut className="w-4 h-4 mr-2.5" />
+                                Logout
+                              </button>
+                            </>
+                          ) : (
+                            <>
+                              <Link
+                                to="/login"
+                                className="block px-4 py-2 hover:bg-neutral-50 dark:hover:bg-neutral-800 hover:text-luxury-gold-600 dark:hover:text-luxury-gold-400 transition-colors font-semibold text-neutral-700 dark:text-neutral-300"
+                              >
+                                Login
+                              </Link>
+                              <Link
+                                to="/register"
+                                className="block px-4 py-2 hover:bg-neutral-50 dark:hover:bg-neutral-800 hover:text-luxury-gold-600 dark:hover:text-luxury-gold-400 transition-colors font-semibold text-neutral-700 dark:text-neutral-300"
+                              >
+                                Register
+                              </Link>
+                            </>
+                          )}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+
+                  {/* Wishlist Link (Desktop/Tablet only - hidden on mobile) */}
+                  <Link
+                    to="/wishlist"
+                    className="hidden md:inline-flex p-2 text-neutral-700 dark:text-neutral-300 hover:text-luxury-gold-600 dark:hover:text-luxury-gold-400 transition-all duration-300 hover:scale-110 relative"
+                    title="Wishlist"
+                  >
+                    <Heart className="w-4.5 h-4.5 sm:w-5 sm:h-5" />
+                    {isAuthenticated && wishlistItems.length > 0 && (
+                      <span className="absolute -top-0.5 -right-0.5 bg-red-650 text-white rounded-full text-[9px] w-3.5 h-3.5 flex items-center justify-center font-bold">
+                        {wishlistItems.length}
+                      </span>
+                    )}
+                  </Link>
+
+                  {/* Cart Link (Always visible on mobile/tablet/desktop) */}
+                  <Link
+                    to="/cart"
+                    className="p-2 text-neutral-700 dark:text-neutral-300 hover:text-luxury-gold-600 dark:hover:text-luxury-gold-400 transition-all duration-300 hover:scale-110 relative"
+                    title="Cart"
+                  >
+                    <ShoppingCart className="w-4.5 h-4.5 sm:w-5 sm:h-5" />
+                    {isAuthenticated && cartCount > 0 && (
+                      <span className="absolute -top-0.5 -right-0.5 bg-black dark:bg-white text-white dark:text-black rounded-full text-[9px] w-3.5 h-3.5 flex items-center justify-center font-bold">
+                        {cartCount}
+                      </span>
+                    )}
+                  </Link>
+
+                  {/* Dark Mode Toggle (Desktop/Tablet only - hidden on mobile navbar, visible in drawer instead) */}
+                  <div className="hidden md:block pl-1">
+                    <DarkModeToggle />
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          {/* Mobile/Tablet Search Overlay */}
+          <AnimatePresence>
+            {isSearchOpen && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className="absolute top-full left-0 right-0 bg-white dark:bg-neutral-950 border-b border-neutral-200/80 dark:border-neutral-800 p-4 shadow-md z-40 lg:hidden"
+              >
+                <form onSubmit={handleSearchSubmit} className="relative flex items-center w-full">
                   <input
                     type="text"
                     placeholder="What are you looking for?"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full text-[10px] xl:text-[11px] py-2 pl-4 pr-14 bg-[#F4DDD2]/40 dark:bg-[#120a06]/40 border border-[#C98A63]/30 dark:border-[#C98A63]/25 rounded-full focus:outline-none focus:ring-1 focus:ring-[#C98A63] focus:border-[#C98A63] focus:bg-[#F4DDD2]/60 transition-all duration-300 font-medium text-[#4A3226] dark:text-[#F7E8DF] placeholder-[#4A3226]/50 dark:placeholder-[#F7E8DF]/45"
+                    className="w-full text-xs py-2.5 pl-4 pr-16 bg-[#fafafa] dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-full focus:outline-none focus:ring-1 focus:ring-black dark:focus:ring-white transition-all text-neutral-800 dark:text-neutral-200"
                   />
-                  <div className="absolute right-3 flex items-center space-x-1.5 text-[#C98A63]">
+                  <div className="absolute right-3.5 flex items-center space-x-2 text-neutral-400">
                     <button
                       type="button"
                       onClick={handleVoiceSearch}
-                      className={`p-0.5 hover:text-[#A86E4A] transition-colors ${isListening ? 'text-red-500 animate-pulse' : ''
+                      className={`p-1 hover:text-luxury-gold-600 dark:hover:text-luxury-gold-400 transition-colors ${isListening ? 'text-red-500 animate-pulse' : ''
                         }`}
-                      title="Voice Search"
                     >
-                      <Mic className="w-3 h-3 xl:w-3.5 xl:h-3.5" />
+                      <Mic className="w-3.5 h-3.5" />
                     </button>
-                    <button
-                      type="submit"
-                      className="p-0.5 hover:text-[#A86E4A] transition-colors"
-                      title="Search"
-                    >
-                      <Search className="w-3 h-3 xl:w-3.5 xl:h-3.5" />
+                    <button type="submit" className="p-1 hover:text-luxury-gold-600 dark:hover:text-luxury-gold-400 transition-colors">
+                      <Search className="w-3.5 h-3.5" />
                     </button>
                   </div>
                 </form>
-              </div>
-
-              {/* Action Icons List */}
-              <div className="flex items-center space-x-1.5 sm:space-x-2">
-                {/* Search Toggle Icon (Tablet/Mobile only - hidden on desktop) */}
-                <button
-                  onClick={() => setIsSearchOpen(!isSearchOpen)}
-                  className="lg:hidden p-2 text-neutral-700 dark:text-neutral-300 hover:text-luxury-gold-600 dark:hover:text-luxury-gold-400 transition-all duration-300 hover:scale-110 focus:outline-none"
-                  title="Search"
-                >
-                  <Search className="w-4.5 h-4.5" />
-                </button>
-
-                {/* Location Icon (Desktop only - hidden on tablet/mobile) */}
-                <button
-                  onClick={() => setIsStoreModalOpen(true)}
-                  className="hidden lg:inline-flex p-2 text-neutral-700 dark:text-neutral-300 hover:text-luxury-gold-600 dark:hover:text-luxury-gold-400 transition-all duration-300 hover:scale-110 focus:outline-none"
-                  title="Store Locator"
-                >
-                  <MapPin className="w-4.5 h-4.5 xl:w-5 xl:h-5" />
-                </button>
-
-                {/* Account / User Dropdown Toggler (Desktop/Tablet only - hidden on mobile) */}
-                <div className="hidden md:block relative">
-                  <button
-                    onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
-                    className="p-2 text-neutral-700 dark:text-neutral-300 hover:text-luxury-gold-600 dark:hover:text-luxury-gold-400 transition-all duration-300 hover:scale-110 focus:outline-none"
-                    title="Account"
-                  >
-                    <User className="w-4.5 h-4.5 sm:w-5 sm:h-5" />
-                  </button>
-
-                  <AnimatePresence>
-                    {isProfileDropdownOpen && (
-                      <motion.div
-                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                        transition={{ duration: 0.15 }}
-                        className="absolute right-0 mt-2.5 w-60 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl py-3 shadow-xl z-50 text-xs text-left"
-                      >
-                        {isAuthenticated ? (
-                          <>
-                            <div className="px-4 pb-2 mb-2 border-b border-neutral-100 dark:border-neutral-800">
-                              <p className="font-bold text-neutral-800 dark:text-neutral-150 truncate">{user?.fullName}</p>
-                              <p className="text-[10px] text-neutral-450 dark:text-neutral-500 truncate">{user?.email}</p>
-                            </div>
-                            {user?.role?.toUpperCase() === 'ADMIN' && (
-                              <Link
-                                to="/admin"
-                                className="flex items-center px-4 py-2 hover:bg-neutral-50 dark:hover:bg-neutral-800 hover:text-luxury-gold-600 dark:hover:text-luxury-gold-400 transition-colors font-semibold text-neutral-700 dark:text-neutral-300"
-                              >
-                                <LayoutDashboard className="w-4 h-4 mr-2.5" />
-                                Admin Dashboard
-                              </Link>
-                            )}
-                            <Link
-                              to="/orders"
-                              className="flex items-center px-4 py-2 hover:bg-neutral-50 dark:hover:bg-neutral-800 hover:text-luxury-gold-600 dark:hover:text-luxury-gold-400 transition-colors font-semibold text-neutral-700 dark:text-neutral-300"
-                            >
-                              <ShoppingCart className="w-4 h-4 mr-2.5" />
-                              My Orders
-                            </Link>
-                            <button
-                              onClick={handleLogout}
-                              className="flex items-center w-full text-left px-4 py-2 hover:bg-neutral-50 dark:hover:bg-neutral-800 text-red-600 font-semibold transition-colors"
-                            >
-                              <LogOut className="w-4 h-4 mr-2.5" />
-                              Logout
-                            </button>
-                          </>
-                        ) : (
-                          <>
-                            <Link
-                              to="/login"
-                              className="block px-4 py-2 hover:bg-neutral-50 dark:hover:bg-neutral-800 hover:text-luxury-gold-600 dark:hover:text-luxury-gold-400 transition-colors font-semibold text-neutral-700 dark:text-neutral-300"
-                            >
-                              Login
-                            </Link>
-                            <Link
-                              to="/register"
-                              className="block px-4 py-2 hover:bg-neutral-50 dark:hover:bg-neutral-800 hover:text-luxury-gold-600 dark:hover:text-luxury-gold-400 transition-colors font-semibold text-neutral-700 dark:text-neutral-300"
-                            >
-                              Register
-                            </Link>
-                          </>
-                        )}
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-
-                {/* Wishlist Link (Desktop/Tablet only - hidden on mobile) */}
-                <Link
-                  to="/wishlist"
-                  className="hidden md:inline-flex p-2 text-neutral-700 dark:text-neutral-300 hover:text-luxury-gold-600 dark:hover:text-luxury-gold-400 transition-all duration-300 hover:scale-110 relative"
-                  title="Wishlist"
-                >
-                  <Heart className="w-4.5 h-4.5 sm:w-5 sm:h-5" />
-                  {isAuthenticated && wishlistItems.length > 0 && (
-                    <span className="absolute -top-0.5 -right-0.5 bg-red-650 text-white rounded-full text-[9px] w-3.5 h-3.5 flex items-center justify-center font-bold">
-                      {wishlistItems.length}
-                    </span>
-                  )}
-                </Link>
-
-                {/* Cart Link (Always visible on mobile/tablet/desktop) */}
-                <Link
-                  to="/cart"
-                  className="p-2 text-neutral-700 dark:text-neutral-300 hover:text-luxury-gold-600 dark:hover:text-luxury-gold-400 transition-all duration-300 hover:scale-110 relative"
-                  title="Cart"
-                >
-                  <ShoppingCart className="w-4.5 h-4.5 sm:w-5 sm:h-5" />
-                  {isAuthenticated && cartCount > 0 && (
-                    <span className="absolute -top-0.5 -right-0.5 bg-black dark:bg-white text-white dark:text-black rounded-full text-[9px] w-3.5 h-3.5 flex items-center justify-center font-bold">
-                      {cartCount}
-                    </span>
-                  )}
-                </Link>
-
-                {/* Dark Mode Toggle (Desktop/Tablet only - hidden on mobile navbar, visible in drawer instead) */}
-                <div className="hidden md:block pl-1">
-                  <DarkModeToggle />
-                </div>
-              </div>
-            </div>
-
-          </div>
-        </div>
-
-        {/* Mobile/Tablet Search Overlay */}
-        <AnimatePresence>
-          {isSearchOpen && (
-            <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              className="absolute top-full left-0 right-0 bg-white dark:bg-neutral-950 border-b border-neutral-200/80 dark:border-neutral-800 p-4 shadow-md z-40 lg:hidden"
-            >
-              <form onSubmit={handleSearchSubmit} className="relative flex items-center w-full">
-                <input
-                  type="text"
-                  placeholder="What are you looking for?"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full text-xs py-2.5 pl-4 pr-16 bg-[#fafafa] dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-full focus:outline-none focus:ring-1 focus:ring-black dark:focus:ring-white transition-all text-neutral-800 dark:text-neutral-200"
-                />
-                <div className="absolute right-3.5 flex items-center space-x-2 text-neutral-400">
-                  <button
-                    type="button"
-                    onClick={handleVoiceSearch}
-                    className={`p-1 hover:text-luxury-gold-600 dark:hover:text-luxury-gold-400 transition-colors ${isListening ? 'text-red-500 animate-pulse' : ''
-                      }`}
-                  >
-                    <Mic className="w-3.5 h-3.5" />
-                  </button>
-                  <button type="submit" className="p-1 hover:text-luxury-gold-600 dark:hover:text-luxury-gold-400 transition-colors">
-                    <Search className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              </form>
-            </motion.div>
-          )}
-        </AnimatePresence>
+              </motion.div>
+            )}
+          </AnimatePresence>
       </nav>
 
       {/* Mobile Drawer (gliding from left) */}
