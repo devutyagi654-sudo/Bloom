@@ -201,7 +201,7 @@ const ProductDetail = () => {
 
             {/* Description */}
             <p className="text-sm font-light text-neutral-600 dark:text-neutral-400 leading-relaxed">
-              {product.description || 'This beautifully designed luxury piece encapsulates the pure minimalism and sophisticated styling characteristics of BLC. Handcrafted from top-grade metals and precious gems.'}
+              {product.description || 'This beautifully designed luxury piece encapsulates the pure minimalism and sophisticated styling characteristics of Bloom Luxe Collection. Handcrafted from top-grade metals and precious gems.'}
             </p>
 
             {/* Trust highlights banner */}

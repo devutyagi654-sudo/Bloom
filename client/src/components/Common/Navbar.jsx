@@ -615,7 +615,7 @@ const Navbar = () => {
               </button>
 
               <div className="flex items-center space-x-3 text-luxury-gold-600 dark:text-luxury-gold-400">
-                <h3 className="font-playfair text-2xl font-bold tracking-wide">BLC Showroom Locator</h3>
+                <h3 className="font-playfair text-2xl font-bold tracking-wide">Bloom Luxe Collection Showroom Locator</h3>
               </div>
 
               <p className="text-xs text-neutral-500 leading-relaxed uppercase tracking-wider font-semibold">

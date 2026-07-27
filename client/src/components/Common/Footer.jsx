@@ -103,7 +103,7 @@ const Footer = () => {
           <div className="space-y-4">
             <h4 className="text-[#4A3226] dark:text-white font-semibold uppercase tracking-widest text-xs font-playfair">The Atelier</h4>
             <ul className="space-y-2 text-sm text-[#4A3226]/70 dark:text-[#F7E8DF]/65">
-              <li>BLC Luxury Group Ltd.</li>
+              <li>Bloom Luxe Collection Group Ltd.</li>
               <li>72 Royal Promenade, Mayfair</li>
               <li>London, W1S 4PT</li>
               <li className="pt-2 text-[#4A3226]/80 dark:text-[#F7E8DF]/60">
@@ -119,7 +119,7 @@ const Footer = () => {
 
         {/* Bottom copyright line */}
         <div className="border-t border-[#C98A63]/25 dark:border-[#C98A63]/15 mt-16 pt-8 flex flex-col sm:flex-row items-center justify-between text-xs text-[#4A3226]/60 dark:text-[#F7E8DF]/50">
-          <p>© {new Date().getFullYear()} BLC Group. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} Bloom Luxe Collection. All rights reserved.</p>
           <div className="flex space-x-6 mt-4 sm:mt-0">
             <a href="#" className="hover:text-neutral-400 transition-colors">Terms of Service</a>
             <a href="#" className="hover:text-neutral-400 transition-colors">Accessibility Statement</a>

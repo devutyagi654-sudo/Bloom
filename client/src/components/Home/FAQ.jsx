@@ -4,8 +4,8 @@ import { Plus, Minus, HelpCircle } from 'lucide-react';
 
 const FAQS = [
   {
-    question: 'Why choose BLC luxury collection?',
-    answer: 'At BLC, every single piece of jewelry and watch is handcrafted by artisans with a focus on details, minimal modern design, and lifetime authenticity. We use only premium conflict-free diamonds, certified 18k and 22k gold, and robust structural metals to ensure your jewelry is an investment for generations.'
+    question: 'Why choose Bloom Luxe Collection?',
+    answer: 'At Bloom Luxe Collection, every single piece of jewelry and watch is handcrafted by artisans with a focus on details, minimal modern design, and lifetime authenticity. We use only premium conflict-free diamonds, certified 18k and 22k gold, and robust structural metals to ensure your jewelry is an investment for generations.'
   },
   {
     question: 'What payment methods do you support?',

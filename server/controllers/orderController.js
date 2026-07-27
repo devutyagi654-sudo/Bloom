@@ -35,21 +35,21 @@ if (isSMTPConfigured) {
 // Mail Dispatcher Helper
 const sendOrderStatusEmail = async (order, status) => {
   const mailSubjectMap = {
-    'Pending': `BLC Atelier - Order Placed [#BLC-${order.id}]`,
-    'Order Confirmed': `BLC Atelier - Order Confirmed [#BLC-${order.id}]`,
-    'Processing': `BLC Atelier - Order Processing [#BLC-${order.id}]`,
-    'Ready to Ship': `BLC Atelier - Ready to Ship [#BLC-${order.id}]`,
-    'Shipped': `BLC Atelier - Order Shipped [#BLC-${order.id}]`,
-    'Out for Delivery': `BLC Atelier - Out for Delivery [#BLC-${order.id}]`,
-    'Delivered': `BLC Atelier - Order Delivered [#BLC-${order.id}]`,
-    'Cancelled': `BLC Atelier - Order Cancelled [#BLC-${order.id}]`,
-    'Return Requested': `BLC Atelier - Return Requested [#BLC-${order.id}]`,
-    'Returned': `BLC Atelier - Order Returned [#BLC-${order.id}]`,
-    'Refunded': `BLC Atelier - Refund Completed [#BLC-${order.id}]`,
-    'Failed': `BLC Atelier - Payment Failed [#BLC-${order.id}]`
+    'Pending': `Bloom Luxe Collection - Order Placed [#BLC-${order.id}]`,
+    'Order Confirmed': `Bloom Luxe Collection - Order Confirmed [#BLC-${order.id}]`,
+    'Processing': `Bloom Luxe Collection - Order Processing [#BLC-${order.id}]`,
+    'Ready to Ship': `Bloom Luxe Collection - Ready to Ship [#BLC-${order.id}]`,
+    'Shipped': `Bloom Luxe Collection - Order Shipped [#BLC-${order.id}]`,
+    'Out for Delivery': `Bloom Luxe Collection - Out for Delivery [#BLC-${order.id}]`,
+    'Delivered': `Bloom Luxe Collection - Order Delivered [#BLC-${order.id}]`,
+    'Cancelled': `Bloom Luxe Collection - Order Cancelled [#BLC-${order.id}]`,
+    'Return Requested': `Bloom Luxe Collection - Return Requested [#BLC-${order.id}]`,
+    'Returned': `Bloom Luxe Collection - Order Returned [#BLC-${order.id}]`,
+    'Refunded': `Bloom Luxe Collection - Refund Completed [#BLC-${order.id}]`,
+    'Failed': `Bloom Luxe Collection - Payment Failed [#BLC-${order.id}]`
   };
 
-  const subject = mailSubjectMap[status] || `BLC Atelier - Status Update [#BLC-${order.id}]`;
+  const subject = mailSubjectMap[status] || `Bloom Luxe Collection - Status Update [#BLC-${order.id}]`;
 
   const itemDetails = order.items.map(item => 
     `<tr>
@@ -66,7 +66,7 @@ const sendOrderStatusEmail = async (order, status) => {
       </div>
 
       <p>Dear <strong>${order.fullName}</strong>,</p>
-      <p>Your BLC Atelier order status has been updated to: <span style="background-color: #eccfb2; padding: 4px 8px; font-weight: bold; border-radius: 4px;">${status}</span></p>
+      <p>Your Bloom Luxe Collection order status has been updated to: <span style="background-color: #eccfb2; padding: 4px 8px; font-weight: bold; border-radius: 4px;">${status}</span></p>
 
       <div style="background-color: #ffffff; padding: 15px; border-radius: 8px; border: 1px solid #f7efe6; margin: 20px 0;">
         <h3 style="margin-top: 0; border-bottom: 1px solid #f7efe6; padding-bottom: 8px;">Order Details</h3>
@@ -95,7 +95,7 @@ const sendOrderStatusEmail = async (order, status) => {
       </table>
 
       <div style="text-align: center; margin-top: 30px; font-size: 11px; color: #8a502d; border-top: 1px solid #eccfb2; padding-top: 20px;">
-        <p>© 2026 BLC Atelier Luxury E-Commerce. All rights reserved.</p>
+        <p>© 2026 Bloom Luxe Collection. All rights reserved.</p>
         <p>This is an automated shipping status updates notification system.</p>
       </div>
     </div>
@@ -104,7 +104,7 @@ const sendOrderStatusEmail = async (order, status) => {
   if (transporter) {
     try {
       await transporter.sendMail({
-        from: `"BLC Atelier" <${process.env.SMTP_USER}>`,
+        from: `"Bloom Luxe Collection" <${process.env.SMTP_USER}>`,
         to: order.email,
         subject: subject,
         html: htmlContent
@@ -422,7 +422,7 @@ const generateInvoice = async (req, res) => {
     doc.pipe(res);
 
     // BLC Brand Header
-    doc.font('Times-Bold').fontSize(26).fillColor('#2e1407').text('B L C   A T E L I E R', { align: 'center' });
+    doc.font('Times-Bold').fontSize(22).fillColor('#2e1407').text('BLOOM LUXE COLLECTION', { align: 'center' });
     doc.font('Times-Roman').fontSize(9).fillColor('#8a502d').text('PREMIUM LUXURY FASHION & ACCESSORIES', { align: 'center', characterSpacing: 1.5 });
     doc.moveDown(2);
 
@@ -443,8 +443,8 @@ const generateInvoice = async (req, res) => {
     doc.text(order.address, 320);
     doc.text(`${order.city}, ${order.state} - ${order.zip}`, 320);
     doc.text(`Phone: ${order.mobile}`, 320);
-    doc.text(`GSTIN Reference: 07BLCATELIER2026M1Z2`, 320);
-    doc.text(`Store PAN Reference: BLCAP2026M`, 320);
+    doc.text(`GSTIN Reference: 07BLOOM2026M1Z2`, 320);
+    doc.text(`Store PAN Reference: BLOOMPAN2026M`, 320);
 
     // Render separator line
     doc.moveDown(3);
@@ -537,7 +537,7 @@ const generateInvoice = async (req, res) => {
     }
 
     // Thank you message footer
-    doc.font('Times-Italic').fontSize(11).fillColor('#8a502d').text('Thank you for shopping at BLC Atelier.', 50, doc.y + 40, { align: 'center' });
+    doc.font('Times-Italic').fontSize(11).fillColor('#8a502d').text('Thank you for shopping at Bloom Luxe Collection.', 50, doc.y + 40, { align: 'center' });
 
     doc.end();
   } catch (error) {
