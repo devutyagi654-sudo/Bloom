@@ -17,10 +17,27 @@ const getProducts = async (req, res) => {
 
     // Category filter
     if (req.query.category) {
-      const cat = req.query.category.toLowerCase();
-      filteredProducts = filteredProducts.filter(p => 
-        String(p.category).toLowerCase() === cat
-      );
+      const cat = req.query.category.toLowerCase().trim();
+      filteredProducts = filteredProducts.filter(p => {
+        const prodCat = String(p.category || '').toLowerCase().trim();
+        const prodName = String(p.name || '').toLowerCase();
+        
+        if (cat === 'bracelet' || cat === 'bracelets') {
+          return prodCat === 'bangles' || prodCat === 'bracelet' || prodCat === 'bracelets' || prodName.includes('bangle') || prodName.includes('bracelet');
+        }
+        if (cat === 'watch' || cat === 'watches') {
+          return prodCat === 'watches' || prodCat === 'watch' || prodName.includes('watch');
+        }
+        if (cat === 'pendant' || cat === 'pendants') {
+          return prodCat === 'pendant' || prodCat === 'pendants' || prodCat === 'necklaces' || prodCat === 'rings' || prodName.includes('pendant') || prodName.includes('necklace') || prodName.includes('ring');
+        }
+        if (cat === 'hamper' || cat === 'hampers') {
+          return prodCat === 'hamper' || prodCat === 'hampers' || prodName.includes('hamper') || prodName.includes('box');
+        }
+        
+        // Default strict comparison
+        return prodCat === cat;
+      });
     }
 
     // Badges/Flags filters

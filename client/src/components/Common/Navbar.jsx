@@ -148,15 +148,15 @@ const Navbar = () => {
               {/* Navigation links (Desktop only - hidden on mobile/tablet) */}
               <div className="hidden lg:flex items-center space-x-5 xl:space-x-7 h-full flex-nowrap whitespace-nowrap">
                 <Link
-                  to="/shop?category=Bangles"
+                  to="/shop?category=Watch"
                   className={`relative h-full flex items-center font-playfair text-base tracking-wider capitalize font-medium transition-colors px-1 ${
-                    isLinkActive('/shop', 'Bangles') 
+                    isLinkActive('/shop', 'Watch') 
                       ? 'text-[#4A3226] dark:text-white font-bold' 
                       : 'text-[#4A3226]/80 dark:text-[#F7E8DF]/80 hover:text-[#C98A63] dark:hover:text-[#C98A63]'
                   }`}
                 >
-                  <span>Bangles</span>
-                  {isLinkActive('/shop', 'Bangles') && (
+                  <span>Watch</span>
+                  {isLinkActive('/shop', 'Watch') && (
                     <motion.div
                       layoutId="activeIndicator"
                       className="absolute bottom-0 left-0 right-0 h-[2.5px] bg-[#C98A63]"
@@ -166,15 +166,51 @@ const Navbar = () => {
                 </Link>
 
                 <Link
-                  to="/shop?category=Rings"
+                  to="/shop?category=Pendant"
                   className={`relative h-full flex items-center font-playfair text-base tracking-wider capitalize font-medium transition-colors px-1 ${
-                    isLinkActive('/shop', 'Rings') 
+                    isLinkActive('/shop', 'Pendant') 
                       ? 'text-[#4A3226] dark:text-white font-bold' 
                       : 'text-[#4A3226]/80 dark:text-[#F7E8DF]/80 hover:text-[#C98A63] dark:hover:text-[#C98A63]'
                   }`}
                 >
-                  <span>Rings</span>
-                  {isLinkActive('/shop', 'Rings') && (
+                  <span>Pendant</span>
+                  {isLinkActive('/shop', 'Pendant') && (
+                    <motion.div
+                      layoutId="activeIndicator"
+                      className="absolute bottom-0 left-0 right-0 h-[2.5px] bg-[#C98A63]"
+                      transition={{ type: 'spring', stiffness: 350, damping: 30 }}
+                    />
+                  )}
+                </Link>
+
+                <Link
+                  to="/shop?category=Hamper"
+                  className={`relative h-full flex items-center font-playfair text-base tracking-wider capitalize font-medium transition-colors px-1 ${
+                    isLinkActive('/shop', 'Hamper') 
+                      ? 'text-[#4A3226] dark:text-white font-bold' 
+                      : 'text-[#4A3226]/80 dark:text-[#F7E8DF]/80 hover:text-[#C98A63] dark:hover:text-[#C98A63]'
+                  }`}
+                >
+                  <span>Hamper</span>
+                  {isLinkActive('/shop', 'Hamper') && (
+                    <motion.div
+                      layoutId="activeIndicator"
+                      className="absolute bottom-0 left-0 right-0 h-[2.5px] bg-[#C98A63]"
+                      transition={{ type: 'spring', stiffness: 350, damping: 30 }}
+                    />
+                  )}
+                </Link>
+
+                <Link
+                  to="/shop?category=Bracelet"
+                  className={`relative h-full flex items-center font-playfair text-base tracking-wider capitalize font-medium transition-colors px-1 ${
+                    isLinkActive('/shop', 'Bracelet') 
+                      ? 'text-[#4A3226] dark:text-white font-bold' 
+                      : 'text-[#4A3226]/80 dark:text-[#F7E8DF]/80 hover:text-[#C98A63] dark:hover:text-[#C98A63]'
+                  }`}
+                >
+                  <span>Bracelet</span>
+                  {isLinkActive('/shop', 'Bracelet') && (
                     <motion.div
                       layoutId="activeIndicator"
                       className="absolute bottom-0 left-0 right-0 h-[2.5px] bg-[#C98A63]"
@@ -200,45 +236,7 @@ const Navbar = () => {
             </div>
 
             {/* Right Column (col-span-1): Search & Icons */}
-            <div className="flex items-center justify-end space-x-3 sm:space-x-5 h-full">
-              {/* Navigation links (Desktop only) */}
-              <div className="hidden lg:flex items-center space-x-5 xl:space-x-7 h-full flex-nowrap whitespace-nowrap mr-2 xl:mr-4">
-                <Link
-                  to="/shop?category=Hamper"
-                  className={`relative h-full flex items-center font-playfair text-base tracking-wider capitalize font-medium transition-colors px-1 ${
-                    isLinkActive('/shop', 'Hamper') 
-                      ? 'text-[#4A3226] dark:text-white font-bold' 
-                      : 'text-[#4A3226]/80 dark:text-[#F7E8DF]/80 hover:text-[#C98A63] dark:hover:text-[#C98A63]'
-                  }`}
-                >
-                  <span>Hamper</span>
-                  {isLinkActive('/shop', 'Hamper') && (
-                    <motion.div
-                      layoutId="activeIndicator"
-                      className="absolute bottom-0 left-0 right-0 h-[2.5px] bg-[#C98A63]"
-                      transition={{ type: 'spring', stiffness: 350, damping: 30 }}
-                    />
-                  )}
-                </Link>
-
-                <Link
-                  to="/shop?category=Watches"
-                  className={`relative h-full flex items-center font-playfair text-base tracking-wider capitalize font-medium transition-colors px-1 ${
-                    isLinkActive('/shop', 'Watches') 
-                      ? 'text-[#4A3226] dark:text-white font-bold' 
-                      : 'text-[#4A3226]/80 dark:text-[#F7E8DF]/80 hover:text-[#C98A63] dark:hover:text-[#C98A63]'
-                  }`}
-                >
-                  <span>Watches</span>
-                  {isLinkActive('/shop', 'Watches') && (
-                    <motion.div
-                      layoutId="activeIndicator"
-                      className="absolute bottom-0 left-0 right-0 h-[2.5px] bg-[#C98A63]"
-                      transition={{ type: 'spring', stiffness: 350, damping: 30 }}
-                    />
-                  )}
-                </Link>
-              </div>
+            <div className="flex items-center justify-end space-x-1.5 sm:space-x-3">
               {/* Search Bar (Desktop only - hidden on mobile/tablet) */}
               <div className="hidden lg:block">
                 <form onSubmit={handleSearchSubmit} className="relative flex items-center w-36 xl:w-56 focus-within:w-44 xl:focus-within:w-64 transition-all duration-300">
