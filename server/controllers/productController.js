@@ -22,7 +22,7 @@ const getProducts = async (req, res) => {
         const prodCat = String(p.category || '').toLowerCase().trim();
         const prodName = String(p.name || '').toLowerCase();
         
-        if (cat === 'bracelet' || cat === 'bracelets') {
+        if (cat === 'bracelet' || cat === 'bracelets' || cat === 'bangles') {
           return prodCat === 'bangles' || prodCat === 'bracelet' || prodCat === 'bracelets' || prodName.includes('bangle') || prodName.includes('bracelet');
         }
         if (cat === 'watch' || cat === 'watches') {

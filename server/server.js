@@ -256,7 +256,7 @@ function migrateUSDToINR() {
   }
 }
 
-// One-time database migration: Rename category "Necklaces" to "Hamper" & standardize/deduplicate categories
+// One-time database migration: Rename category "Necklaces" to "Hamper", rename "Bangles" to "Bracelet", & standardize/deduplicate categories
 function migrateCategories() {
   try {
     const categories = getTableData('categories.xlsx');
@@ -270,8 +270,9 @@ function migrateCategories() {
           c.name = 'Hamper';
           c.description = 'Premium curated luxury hampers and customized gift sets.';
           catUpdated = true;
-        } else if (nameTrimmed.toLowerCase() === 'bangles' && c.name !== 'Bangles') {
-          c.name = 'Bangles';
+        } else if (nameTrimmed.toLowerCase() === 'bangles' || nameTrimmed.toLowerCase() === 'bracelet' || nameTrimmed.toLowerCase() === 'bracelets') {
+          c.name = 'Bracelet';
+          c.description = 'Elegant handcrafted bracelets, cuffs, and wristwear.';
           catUpdated = true;
         } else if (nameTrimmed.toLowerCase() === 'rings' && c.name !== 'Rings') {
           c.name = 'Rings';
@@ -315,8 +316,8 @@ function migrateCategories() {
         if (catClean.toLowerCase() === 'necklaces') {
           p.category = 'Hamper';
           prodUpdated = true;
-        } else if (catClean.toLowerCase() === 'bangles' && p.category !== 'Bangles') {
-          p.category = 'Bangles';
+        } else if (catClean.toLowerCase() === 'bangles' || catClean.toLowerCase() === 'bracelet' || catClean.toLowerCase() === 'bracelets') {
+          p.category = 'Bracelet';
           prodUpdated = true;
         } else if (catClean.toLowerCase() === 'rings' && p.category !== 'Rings') {
           p.category = 'Rings';
@@ -336,7 +337,7 @@ function migrateCategories() {
 
     if (prodUpdated) {
       writeTableData('products.xlsx', products);
-      console.log('[MIGRATION] Standardized product categories casing in database.');
+      console.log('[MIGRATION] Standardized product categories casing and bracelet renames in database.');
     }
   } catch (err) {
     console.error('[MIGRATION] Category and product migration failed:', err);
