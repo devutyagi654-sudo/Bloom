@@ -132,7 +132,7 @@ const Navbar = () => {
         <div className="max-w-[95%] sm:max-w-[92%] mx-auto h-full px-2 sm:px-4">
 
           {/* 3-Column Grid Layout to prevent overlaps and keep logo centered */}
-          <div className="grid grid-cols-3 h-full items-center">
+          <div className="grid grid-cols-[1fr_auto_1fr] gap-4 h-full items-center">
 
             {/* Left Column (col-span-1): Hamburger Menu & Category Links */}
             <div className="flex items-center justify-start space-x-2 sm:space-x-4 h-full">
@@ -146,7 +146,7 @@ const Navbar = () => {
               </button>
 
               {/* Navigation links (Desktop only - hidden on mobile/tablet) */}
-              <div className="hidden lg:flex items-center space-x-5 xl:space-x-7 h-full">
+              <div className="hidden lg:flex items-center space-x-5 xl:space-x-7 h-full flex-nowrap whitespace-nowrap">
                 <Link
                   to="/"
                   className={`relative h-full flex items-center font-playfair text-base tracking-wider capitalize font-medium transition-colors px-1 ${
