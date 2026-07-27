@@ -47,7 +47,7 @@ const Wishlist = () => {
             <Heart className="w-12 h-12 text-neutral-300 dark:text-neutral-800 mx-auto mb-4" />
             <h3 className="font-playfair text-xl font-bold mb-2">Your Wishlist is Empty</h3>
             <p className="text-neutral-400 text-sm max-w-sm mx-auto mb-6">
-              Save your favorite luxury statement rings, watches, and necklaces to watch their stock levels.
+              Save your favorite luxury statement rings, watches, and hampers to watch their stock levels.
             </p>
             <button onClick={() => navigate('/shop')} className="bg-black dark:bg-white text-white dark:text-black text-xs font-bold uppercase tracking-widest py-3.5 px-8 rounded hover:bg-neutral-800 dark:hover:bg-neutral-100 transition-colors">
               Explore Collection

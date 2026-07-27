@@ -59,7 +59,7 @@ const Shop = () => {
         <div className="border-b border-neutral-100 dark:border-neutral-900 pb-6 mb-8 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
           <div>
             <h1 className="font-playfair text-3xl md:text-4xl text-neutral-900 dark:text-white font-bold tracking-wide">
-              The Bloom Luxe Collection
+              The bloomluxecollection
             </h1>
             <p className="text-neutral-400 dark:text-neutral-500 text-xs md:text-sm font-light mt-1">
               Showing {products.length} luxury statement pieces

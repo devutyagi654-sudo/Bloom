@@ -68,8 +68,8 @@ function seedDatabase() {
         },
         {
           id: '4',
-          name: 'Necklaces',
-          description: 'Luxury pendants, gold chokers, and diamond chains.',
+          name: 'Hamper',
+          description: 'Premium curated luxury hampers and customized gift sets.',
           image: 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=600&auto=format&fit=crop&q=80',
           createdAt: new Date().toISOString()
         },
@@ -156,7 +156,7 @@ function seedDatabase() {
           description: 'An elegant minimalist infinity-shaped gold wire frame adorned with micro-diamonds, hanging from a delicate 18k solid gold chain. Adjustable length.',
           price: 890,
           discountPrice: 750,
-          category: 'Necklaces',
+          category: 'Hamper',
           stock: 15,
           images: [
             'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=600&auto=format&fit=crop&q=80',
@@ -256,6 +256,40 @@ function migrateUSDToINR() {
   }
 }
 
+// One-time database migration: Rename category "Necklaces" to "Hamper"
+function migrateCategories() {
+  try {
+    const categories = getTableData('categories.xlsx');
+    let catUpdated = false;
+    categories.forEach(c => {
+      if (c.name === 'Necklaces') {
+        c.name = 'Hamper';
+        c.description = 'Premium curated luxury hampers and customized gift sets.';
+        catUpdated = true;
+      }
+    });
+    if (catUpdated) {
+      writeTableData('categories.xlsx', categories);
+      console.log('[MIGRATION] Updated categories database: Necklaces -> Hamper.');
+    }
+
+    const products = getTableData('products.xlsx');
+    let prodUpdated = false;
+    products.forEach(p => {
+      if (p.category === 'Necklaces') {
+        p.category = 'Hamper';
+        prodUpdated = true;
+      }
+    });
+    if (prodUpdated) {
+      writeTableData('products.xlsx', products);
+      console.log('[MIGRATION] Updated products database: Necklaces -> Hamper.');
+    }
+  } catch (err) {
+    console.error('[MIGRATION] Failed to run Necklaces to Hamper migration:', err);
+  }
+}
+
 const PORT = process.env.PORT || 5000;
 const { startProgressionService } = require('./services/progressionService');
 
@@ -275,6 +309,7 @@ app.use((err, req, res, next) => {
 // Boot Database first, then launch Web Server
 initDB().then(() => {
   migrateUSDToINR();
+  migrateCategories();
   
   app.listen(PORT, () => {
     console.log(`Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);

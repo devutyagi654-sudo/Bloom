@@ -28,7 +28,7 @@ const Contact = () => {
 
     try {
       await axios.post(`${API_URL}/contact/query`, { name, email, mobile, message });
-      setSuccess('Your query has been submitted to the Bloom Luxe Collection Relations team. We will contact you shortly.');
+      setSuccess('Your query has been submitted to the bloomluxecollection Relations team. We will contact you shortly.');
       setName('');
       setEmail('');
       setMobile('');
@@ -68,7 +68,7 @@ const Contact = () => {
               <div>
                 <h5 className="font-semibold text-neutral-800 dark:text-neutral-200 text-sm">Headquarters Atelier</h5>
                 <p className="text-xs text-neutral-500 mt-1 leading-relaxed">
-                  Bloom Luxe Collection Group Ltd.<br />
+                  bloomluxecollection Group Ltd.<br />
                   72 Royal Promenade, Mayfair<br />
                   London, W1S 4PT
                 </p>

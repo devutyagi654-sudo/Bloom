@@ -304,7 +304,7 @@ const handleRetryPayment = async (order) => {
         key: import.meta.env.VITE_RAZORPAY_KEY_ID || 'your_razorpay_key_id',
         amount: rzOrder.amount,
         currency: rzOrder.currency,
-        name: "Bloom Luxe Collection",
+        name: "bloomluxecollection",
         description: "Retry Order Payment",
         order_id: rzOrder.orderId,
         prefill: {

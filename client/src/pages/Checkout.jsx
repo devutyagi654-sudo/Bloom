@@ -193,7 +193,7 @@ const Checkout = () => {
             key: import.meta.env.VITE_RAZORPAY_KEY_ID || 'your_razorpay_key_id',
             amount: orderData.amount,
             currency: orderData.currency,
-            name: "Bloom Luxe Collection",
+            name: "bloomluxecollection",
             description: "Prepaid Order Checkout",
             order_id: orderData.razorpayOrderId,
             prefill: {

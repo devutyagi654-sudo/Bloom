@@ -135,7 +135,7 @@ const Home = () => {
 
     try {
       await axios.post(`${API_URL}/contact/newsletter`, { email: newsletterEmail });
-      setNewsletterStatus({ type: 'success', msg: 'Welcome to the Bloom Luxe Collection Club. Please check your inbox shortly.' });
+      setNewsletterStatus({ type: 'success', msg: 'Welcome to the bloomluxecollection Club. Please check your inbox shortly.' });
       setNewsletterEmail('');
     } catch (err) {
       setNewsletterStatus({
@@ -213,7 +213,7 @@ const Home = () => {
               A Symphony of Metals & Certitude
             </h2>
             <p className="text-neutral-400 font-light text-sm sm:text-base leading-relaxed">
-              Every diamond at Bloom Luxe Collection is individually inspected and sourced conflict-free. Certified GIA certificates accompany every ring, ensuring purity, longevity, and high investment metrics for our global collectors.
+              Every diamond at bloomluxecollection is individually inspected and sourced conflict-free. Certified GIA certificates accompany every ring, ensuring purity, longevity, and high investment metrics for our global collectors.
             </p>
             <div className="flex items-center space-x-6 text-neutral-300 text-xs tracking-wider uppercase font-semibold">
               <div className="flex items-center">
