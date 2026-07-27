@@ -1,6 +1,7 @@
 const path = require('path');
 const fs = require('fs');
 const { getTableData, writeTableData, insertRow, deleteRow } = require('../config/db');
+const { uploadToCloudinary } = require('../config/cloudinary');
 
 // Get active banners list
 const getBanner = async (req, res) => {
@@ -45,7 +46,8 @@ const uploadBanner = async (req, res) => {
 
     for (const file of req.files) {
       const filename = file.filename;
-      const bannerPath = `/uploads/banners/${filename}`;
+      const cloudinaryUrl = await uploadToCloudinary(file.path, 'banners');
+      const bannerPath = cloudinaryUrl || `/uploads/banners/${filename}`;
       
       insertRow('banners.xlsx', {
         filename,

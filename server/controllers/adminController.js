@@ -2,6 +2,7 @@ const path = require('path');
 const fs = require('fs');
 const xlsx = require('xlsx');
 const { getTableData, insertRow, updateRow, deleteRow, writeTableData } = require('../config/db');
+const { uploadToCloudinary } = require('../config/cloudinary');
 
 // --- ANALYTICS ---
 const getDashboardStats = async (req, res) => {
@@ -112,7 +113,8 @@ const addCategory = async (req, res) => {
     let image = '';
     
     if (req.file) {
-      image = `/uploads/${req.file.filename}`;
+      const cloudinaryUrl = await uploadToCloudinary(req.file.path, 'categories');
+      image = cloudinaryUrl || `/uploads/${req.file.filename}`;
     }
     
     if (!name) {
@@ -160,7 +162,8 @@ const updateCategory = async (req, res) => {
         const oldPath = path.join(__dirname, '..', category.image);
         if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
       }
-      updatedFields.image = `/uploads/${req.file.filename}`;
+      const cloudinaryUrl = await uploadToCloudinary(req.file.path, 'categories');
+      updatedFields.image = cloudinaryUrl || `/uploads/${req.file.filename}`;
     }
     
     const updated = updateRow('categories.xlsx', id, updatedFields);
@@ -209,7 +212,10 @@ const addProduct = async (req, res) => {
     // Extract image paths
     let images = [];
     if (req.files && req.files.length > 0) {
-      images = req.files.map(file => `/uploads/${file.filename}`);
+      for (const file of req.files) {
+        const cloudinaryUrl = await uploadToCloudinary(file.path, 'products');
+        images.push(cloudinaryUrl || `/uploads/${file.filename}`);
+      }
     }
     
     const newProduct = insertRow('products.xlsx', {
@@ -266,7 +272,10 @@ const updateProduct = async (req, res) => {
     // New uploaded files
     let newImages = [];
     if (req.files && req.files.length > 0) {
-      newImages = req.files.map(file => `/uploads/${file.filename}`);
+      for (const file of req.files) {
+        const cloudinaryUrl = await uploadToCloudinary(file.path, 'products');
+        newImages.push(cloudinaryUrl || `/uploads/${file.filename}`);
+      }
     }
     
     const finalImages = [...parsedExistingImages, ...newImages];

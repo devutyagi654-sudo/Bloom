@@ -7,7 +7,7 @@ const fs = require('fs');
 const migrateToPersistent = require('./scratch/migrate_to_persistent');
 migrateToPersistent();
 
-const { getTableData, writeTableData, insertRow } = require('./config/db');
+const { initDB, getTableData, writeTableData, insertRow } = require('./config/db');
 const { EXCHANGE_RATE } = require('./config/currency');
 
 const app = express();
@@ -256,7 +256,8 @@ function migrateUSDToINR() {
   }
 }
 
-migrateUSDToINR();
+const PORT = process.env.PORT || 5000;
+const { startProgressionService } = require('./services/progressionService');
 
 // Base Route
 app.get('/', (req, res) => {
@@ -271,10 +272,15 @@ app.use((err, req, res, next) => {
   });
 });
 
-const PORT = process.env.PORT || 5000;
-const { startProgressionService } = require('./services/progressionService');
-
-app.listen(PORT, () => {
-  console.log(`Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
-  startProgressionService();
+// Boot Database first, then launch Web Server
+initDB().then(() => {
+  migrateUSDToINR();
+  
+  app.listen(PORT, () => {
+    console.log(`Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
+    startProgressionService();
+  });
+}).catch(err => {
+  console.error('[SERVER] Fatal database initialization failure:', err);
+  process.exit(1);
 });
