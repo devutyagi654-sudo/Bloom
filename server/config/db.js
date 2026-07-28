@@ -118,9 +118,14 @@ async function initDB() {
     await mongoose.connect(MONGODB_URI);
     console.log('[DB] Connected to MongoDB successfully.');
 
-    // Load data from MongoDB into in-memory cache
-    const allRows = await DataRow.find({});
+    // Load data from MongoDB into in-memory cache using lean for plain JS objects
+    const allRows = await DataRow.find({}).lean();
     console.log(`[DB] Loaded ${allRows.length} documents from MongoDB Atlas.`);
+
+    // Reset memory cache to prevent duplicates on reconnect/reload
+    Object.keys(SCHEMAS).forEach(table => {
+      memoryDb[table] = [];
+    });
 
     // If MongoDB is empty, run migration from existing Excel files
     if (allRows.length === 0) {
@@ -170,17 +175,27 @@ function getTableData(fileName) {
 function writeTableData(fileName, data) {
   if (useMongoDB) {
     memoryDb[fileName] = data;
-    // Sync asynchronously to MongoDB
-    DataRow.deleteMany({ tableName: fileName })
+    // Sync safely in-place to MongoDB
+    const ids = data.map(row => String(row.id));
+    
+    // Asynchronously delete rows not present in current data list
+    DataRow.deleteMany({ tableName: fileName, rowId: { $nin: ids } })
       .then(() => {
-        const docs = data.map(row => ({
-          tableName: fileName,
-          rowId: String(row.id),
-          data: Object.fromEntries(Object.entries(row).filter(([k]) => k !== 'id'))
-        }));
-        return DataRow.insertMany(docs);
+        const operations = data.map(row => {
+          const { id, ...dataFields } = row;
+          return {
+            updateOne: {
+              filter: { tableName: fileName, rowId: String(id) },
+              update: { $set: { data: dataFields } },
+              upsert: true
+            }
+          };
+        });
+        if (operations.length > 0) {
+          return DataRow.bulkWrite(operations);
+        }
       })
-      .catch(err => console.error(`[DB] Background sync failed for writeTableData (${fileName}):`, err));
+      .catch(err => console.error(`[DB] Safe sync failed for writeTableData (${fileName}):`, err));
     return;
   }
   writeTableDataToExcel(fileName, data);
