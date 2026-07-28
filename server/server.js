@@ -244,7 +244,7 @@ function seedDatabase() {
   }
 }
 
-seedDatabase();
+
 
 // Migration: Convert existing products in products.xlsx from USD to INR if needed
 function migrateUSDToINR() {
@@ -379,6 +379,7 @@ app.use((err, req, res, next) => {
 
 // Boot Database first, then launch Web Server
 initDB().then(() => {
+  seedDatabase();
   migrateUSDToINR();
   migrateCategories();
   
