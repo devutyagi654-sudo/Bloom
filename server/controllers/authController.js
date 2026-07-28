@@ -1,6 +1,6 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { getTableData, insertRow } = require('../config/db');
+const User = require('../models/User');
 
 const generateToken = (id, role) => {
   return jwt.sign({ id, role }, process.env.JWT_SECRET || 'blc_premium_luxury_ecommerce_secret_key_2026', {
@@ -21,16 +21,14 @@ const registerUser = async (req, res) => {
       return res.status(400).json({ message: 'Passwords do not match' });
     }
     
-    const users = getTableData('users.xlsx');
-    
     // Check if email already exists
-    const emailExists = users.some(u => String(u.email).toLowerCase() === email.toLowerCase());
+    const emailExists = await User.findOne({ email: email.toLowerCase() });
     if (emailExists) {
       return res.status(400).json({ message: 'User with this email already exists' });
     }
     
     // Check if mobile already exists
-    const mobileExists = users.some(u => String(u.mobile) === String(mobile));
+    const mobileExists = await User.findOne({ mobile });
     if (mobileExists) {
       return res.status(400).json({ message: 'User with this mobile number already exists' });
     }
@@ -39,24 +37,24 @@ const registerUser = async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
     
-    // Strict requirement: new registration is ALWAYS role USER
     const role = 'USER';
     
-    const newUser = insertRow('users.xlsx', {
+    const newUser = await User.create({
       fullName,
       email: email.toLowerCase(),
       mobile,
       password: hashedPassword,
-      role: 'user' // lowercase in xlsx
+      role: 'USER'
     });
     
     return res.status(201).json({
-      id: newUser.id,
+      id: newUser._id,
+      _id: newUser._id,
       fullName: newUser.fullName,
       email: newUser.email,
       mobile: newUser.mobile,
       role: role,
-      token: generateToken(newUser.id, role)
+      token: generateToken(newUser._id, role)
     });
   } catch (error) {
     console.error(error);
@@ -73,13 +71,13 @@ const loginUser = async (req, res) => {
       return res.status(400).json({ message: 'Please enter all credentials' });
     }
     
-    const users = getTableData('users.xlsx');
-    
     // Find user by email OR mobile
-    const user = users.find(u => 
-      String(u.email).toLowerCase() === emailOrMobile.toLowerCase() || 
-      String(u.mobile) === String(emailOrMobile)
-    );
+    const user = await User.findOne({
+      $or: [
+        { email: emailOrMobile.toLowerCase() },
+        { mobile: emailOrMobile }
+      ]
+    });
     
     if (!user) {
       return res.status(401).json({ message: 'Invalid credentials' });
@@ -94,13 +92,13 @@ const loginUser = async (req, res) => {
       return res.status(403).json({ message: 'Your account has been disabled by the administrator' });
     }
     
-    // Check if email is admin@blc.com or role is admin
     const isAdmin = String(user.email).toLowerCase() === 'admin@blc.com' || String(user.role).toLowerCase() === 'admin';
     const mappedRole = isAdmin ? 'ADMIN' : 'USER';
-    const finalUserId = isAdmin ? 'admin' : user.id;
+    const finalUserId = isAdmin ? 'admin' : user._id;
     
     return res.json({
       id: finalUserId,
+      _id: finalUserId,
       fullName: user.fullName || 'Atelier Admin',
       email: user.email,
       mobile: user.mobile,
@@ -116,10 +114,10 @@ const loginUser = async (req, res) => {
 // Get User Profile
 const getUserProfile = async (req, res) => {
   try {
-    // Check for bypass admin session
     if (String(req.user?.id) === 'admin' || req.user?.email === 'admin@blc.com') {
       return res.json({
         id: 'admin',
+        _id: 'admin',
         fullName: 'Atelier Admin',
         email: 'admin@blc.com',
         mobile: '9999999999',
@@ -128,14 +126,13 @@ const getUserProfile = async (req, res) => {
       });
     }
 
-    const users = getTableData('users.xlsx');
-    const user = users.find(u => String(u.id) === String(req.user.id));
+    const user = await User.findById(req.user.id || req.user._id);
     
     if (user) {
-      // Force role USER for all database profiles
-      const mappedRole = 'USER';
+      const mappedRole = (user.email === 'admin@blc.com') ? 'ADMIN' : 'USER';
       return res.json({
-        id: user.id,
+        id: user._id,
+        _id: user._id,
         fullName: user.fullName,
         email: user.email,
         mobile: user.mobile,

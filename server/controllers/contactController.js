@@ -1,4 +1,5 @@
-const { getTableData, insertRow } = require('../config/db');
+const Contact = require('../models/Contact');
+const Newsletter = require('../models/Newsletter');
 
 // Submit Contact Query
 const submitContact = async (req, res) => {
@@ -9,7 +10,7 @@ const submitContact = async (req, res) => {
       return res.status(400).json({ message: 'All fields are required' });
     }
     
-    const newContact = insertRow('contacts.xlsx', {
+    const newContact = await Contact.create({
       name,
       email: email.toLowerCase(),
       mobile,
@@ -17,7 +18,10 @@ const submitContact = async (req, res) => {
       status: 'unread'
     });
     
-    return res.status(201).json({ message: 'Query submitted successfully', query: newContact });
+    const obj = newContact.toObject();
+    obj.id = obj._id;
+
+    return res.status(201).json({ message: 'Query submitted successfully', query: obj });
   } catch (error) {
     console.error(error);
     return res.status(500).json({ message: 'Server error submitting query' });
@@ -33,18 +37,20 @@ const subscribeNewsletter = async (req, res) => {
       return res.status(400).json({ message: 'Email address is required' });
     }
     
-    const newsletter = getTableData('newsletter.xlsx');
-    const exists = newsletter.some(n => String(n.email).toLowerCase() === email.toLowerCase());
+    const exists = await Newsletter.findOne({ email: email.toLowerCase() });
     
     if (exists) {
       return res.status(400).json({ message: 'This email is already subscribed' });
     }
     
-    const subscription = insertRow('newsletter.xlsx', {
+    const subscription = await Newsletter.create({
       email: email.toLowerCase()
     });
+
+    const obj = subscription.toObject();
+    obj.id = obj._id;
     
-    return res.status(201).json({ message: 'Subscribed to newsletter successfully', subscription });
+    return res.status(201).json({ message: 'Subscribed to newsletter successfully', subscription: obj });
   } catch (error) {
     console.error(error);
     return res.status(500).json({ message: 'Server error subscribing to newsletter' });

@@ -1,13 +1,18 @@
 const path = require('path');
 const fs = require('fs');
-const { getTableData, writeTableData, insertRow, deleteRow } = require('../config/db');
+const Banner = require('../models/Banner');
 const { uploadToCloudinary } = require('../config/cloudinary');
 
 // Get active banners list
 const getBanner = async (req, res) => {
   try {
-    const banners = getTableData('banners.xlsx');
-    return res.json(banners);
+    const banners = await Banner.find().sort({ createdAt: -1 });
+    const formatted = banners.map(b => {
+      const obj = b.toObject();
+      obj.id = obj._id;
+      return obj;
+    });
+    return res.json(formatted);
   } catch (error) {
     console.error('Error fetching banners:', error);
     return res.status(500).json({
@@ -28,11 +33,10 @@ const uploadBanner = async (req, res) => {
       });
     }
 
-    const banners = getTableData('banners.xlsx');
+    const currentCount = await Banner.countDocuments();
     
     // Validate total count limit of 5 banners
-    if (banners.length + req.files.length > 5) {
-      // Cleanup temp uploaded files
+    if (currentCount + req.files.length > 5) {
       req.files.forEach(file => {
         if (fs.existsSync(file.path)) {
           fs.unlinkSync(file.path);
@@ -50,22 +54,26 @@ const uploadBanner = async (req, res) => {
       const cloudinaryUrl = await uploadToCloudinary(file.path, 'banners');
       const bannerPath = cloudinaryUrl || `${host}/uploads/banners/${filename}`;
       
-      insertRow('banners.xlsx', {
+      await Banner.create({
         filename,
         bannerPath
       });
     }
 
-    const updatedBanners = getTableData('banners.xlsx');
+    const updatedBanners = await Banner.find().sort({ createdAt: -1 });
+    const formatted = updatedBanners.map(b => {
+      const obj = b.toObject();
+      obj.id = obj._id;
+      return obj;
+    });
 
     return res.status(201).json({
       success: true,
       message: `${req.files.length} banner(s) uploaded successfully`,
-      banners: updatedBanners
+      banners: formatted
     });
   } catch (error) {
     console.error('Error uploading banner:', error);
-    // Cleanup files if error occurred
     if (req.files) {
       req.files.forEach(file => {
         if (fs.existsSync(file.path)) fs.unlinkSync(file.path);
@@ -83,8 +91,7 @@ const uploadBanner = async (req, res) => {
 const deleteBanner = async (req, res) => {
   try {
     const { id } = req.params;
-    const banners = getTableData('banners.xlsx');
-    const banner = banners.find(b => String(b.id) === String(id));
+    const banner = await Banner.findById(id);
     
     if (!banner) {
       return res.status(404).json({
@@ -104,15 +111,19 @@ const deleteBanner = async (req, res) => {
       }
     }
 
-    // Delete row from excel database
-    deleteRow('banners.xlsx', id);
+    await Banner.findByIdAndDelete(id);
 
-    const updatedBanners = getTableData('banners.xlsx');
+    const updatedBanners = await Banner.find().sort({ createdAt: -1 });
+    const formatted = updatedBanners.map(b => {
+      const obj = b.toObject();
+      obj.id = obj._id;
+      return obj;
+    });
 
     return res.json({
       success: true,
       message: 'Banner deleted successfully',
-      banners: updatedBanners
+      banners: formatted
     });
   } catch (error) {
     console.error('Error deleting banner:', error);

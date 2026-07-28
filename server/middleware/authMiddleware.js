@@ -1,7 +1,7 @@
 const jwt = require('jsonwebtoken');
-const { getTableData } = require('../config/db');
+const User = require('../models/User');
 
-const protect = (req, res, next) => {
+const protect = async (req, res, next) => {
   let token;
   
   if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
@@ -12,6 +12,7 @@ const protect = (req, res, next) => {
       if (decoded.id === 'admin') {
         req.user = {
           id: 'admin',
+          _id: 'admin',
           fullName: 'Atelier Admin',
           email: 'admin@blc.com',
           mobile: '9999999999',
@@ -20,19 +21,16 @@ const protect = (req, res, next) => {
         return next();
       }
       
-      const users = getTableData('users.xlsx');
-      const user = users.find(u => String(u.id) === String(decoded.id));
+      const user = await User.findById(decoded.id).select('-password');
       
       if (!user) {
         return res.status(401).json({ message: 'Not authorized, user not found' });
       }
       
-      // Don't include password in request object
-      const { password, ...userWithoutPassword } = user;
-      // Convert role to uppercase 'ADMIN' or 'USER' (strictly restricted to admin@blc.com email)
-      userWithoutPassword.role = (userWithoutPassword.email === 'admin@blc.com') ? 'ADMIN' : 'USER';
+      const userObj = user.toObject();
+      userObj.role = (userObj.email === 'admin@blc.com') ? 'ADMIN' : 'USER';
       
-      req.user = userWithoutPassword;
+      req.user = userObj;
       next();
     } catch (error) {
       console.error(error);
@@ -46,7 +44,7 @@ const protect = (req, res, next) => {
 };
 
 const adminOnly = (req, res, next) => {
-  if (req.user && req.user.role === 'ADMIN') {
+  if (req.user && (req.user.role === 'ADMIN' || req.user.role === 'admin')) {
     next();
   } else {
     return res.status(403).json({ message: '403 Forbidden' });

@@ -1,4 +1,4 @@
-const { getTableData, updateRow } = require('../config/db');
+const Order = require('../models/Order');
 const { sendOrderStatusEmail } = require('./orderController');
 
 // Shiprocket Webhook Receiver
@@ -14,8 +14,7 @@ const handleShiprocketWebhook = async (req, res) => {
       return res.status(400).json({ message: 'AWB code is missing in webhook payload' });
     }
 
-    const orders = getTableData('orders.xlsx');
-    const order = orders.find(o => String(o.awbCode) === String(awb));
+    const order = await Order.findOne({ awbCode: String(awb) });
 
     if (!order) {
       console.log(`Webhook ignored: No order matched AWB ${awb}`);
@@ -27,29 +26,26 @@ const handleShiprocketWebhook = async (req, res) => {
 
     if (shipStatus.includes('delivered')) {
       nextStatus = 'Delivered';
-      paymentStatus = 'Paid'; // If COD, mark as paid upon delivery
+      paymentStatus = 'Paid';
     } else if (shipStatus.includes('out for delivery') || shipStatus.includes('out_for_delivery')) {
-      nextStatus = 'Out For Delivery';
+      nextStatus = 'Out for Delivery';
     } else if (shipStatus.includes('transit') || shipStatus.includes('in_transit')) {
       nextStatus = 'In Transit';
     } else if (shipStatus.includes('shipped')) {
       nextStatus = 'Shipped';
     } else if (shipStatus.includes('packed') || shipStatus.includes('ready to ship')) {
-      nextStatus = 'Packed';
+      nextStatus = 'Ready to Ship';
     }
 
-    // Only update and send mail if status changed
     if (nextStatus !== order.orderStatus || paymentStatus !== order.paymentStatus) {
-      const updated = updateRow('orders.xlsx', order.id, {
-        orderStatus: nextStatus,
-        paymentStatus
-      });
+      order.orderStatus = nextStatus;
+      order.paymentStatus = paymentStatus;
+      await order.save();
 
-      console.log(`Order #${order.id} automatically updated via Shiprocket Webhook to: ${nextStatus}`);
+      console.log(`Order #${order._id} automatically updated via Shiprocket Webhook to: ${nextStatus}`);
 
-      // Dispatch Nodemailer Status Alert
       try {
-        await sendOrderStatusEmail(updated, nextStatus);
+        await sendOrderStatusEmail(order, nextStatus);
       } catch (err) {
         console.error('Webhook mail notification error:', err);
       }

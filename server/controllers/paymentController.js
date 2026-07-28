@@ -1,6 +1,10 @@
 const crypto = require('crypto');
 const Razorpay = require('razorpay');
-const { getTableData, insertRow, updateRow, writeTableData } = require('../config/db');
+const mongoose = require('mongoose');
+
+const Order = require('../models/Order');
+const Product = require('../models/Product');
+const Cart = require('../models/Cart');
 const { createShipmentInternal } = require('./shippingController');
 const { sendOrderStatusEmail, logOrderStatusHistory, transitionOrderStatus } = require('./orderController');
 
@@ -21,7 +25,7 @@ if (isRazorpayConfigured) {
 // Create Razorpay Order
 const createRazorpayOrder = async (req, res) => {
   try {
-    const { amount } = req.body; // Amount in Rupees
+    const { amount } = req.body;
     if (!amount) {
       return res.status(400).json({ message: 'Amount is required' });
     }
@@ -43,7 +47,6 @@ const createRazorpayOrder = async (req, res) => {
         mockMode: false
       });
     } else {
-      // Mock Razorpay order creation
       const mockOrderId = `order_mock_${Math.random().toString(36).substring(2, 11)}`;
       return res.json({
         success: true,
@@ -66,14 +69,13 @@ const verifyPayment = async (req, res) => {
       razorpayOrderId,
       razorpayPaymentId,
       razorpaySignature,
-      orderData // full checkout details
+      orderData
     } = req.body;
 
     if (!razorpayOrderId || !razorpayPaymentId) {
       return res.status(400).json({ message: 'Missing Razorpay order/payment reference details' });
     }
 
-    // Verify signature
     let isSignatureValid = false;
 
     if (razorpay) {
@@ -87,7 +89,6 @@ const verifyPayment = async (req, res) => {
         .digest('hex');
       isSignatureValid = (generated_signature === razorpaySignature);
     } else {
-      // Mock verification mode
       isSignatureValid = razorpayOrderId.startsWith('order_mock_');
     }
 
@@ -95,49 +96,39 @@ const verifyPayment = async (req, res) => {
       return res.status(400).json({ message: 'Payment verification failed' });
     }
 
+    const userId = req.user.id || req.user._id;
+
     // Check if the order already exists (Retry Payment flow!)
-    const orders = getTableData('orders.xlsx');
-    const existingOrder = orders.find(o => String(o.razorpayOrderId) === String(razorpayOrderId));
+    const existingOrder = await Order.findOne({ razorpayOrderId });
 
     if (existingOrder) {
-      // Update existing order payment details
-      updateRow('orders.xlsx', existingOrder.id, {
-        paymentStatus: 'Paid',
-        razorpayPaymentId,
-        razorpaySignature: razorpaySignature || 'mock_signature'
-      });
+      existingOrder.paymentStatus = 'Paid';
+      existingOrder.razorpayPaymentId = razorpayPaymentId;
+      existingOrder.razorpaySignature = razorpaySignature || 'mock_signature';
+      await existingOrder.save();
 
-      console.log(`Prepaid order #${existingOrder.id} successfully updated on retry pay verification.`);
+      console.log(`Prepaid order #${existingOrder._id} successfully updated on retry pay verification.`);
 
-      // Transition status to Order Confirmed
-      const transitioned = await transitionOrderStatus(existingOrder.id, 'Order Confirmed', 'System', 'Prepaid payment verified successfully (Payment Retry)');
+      const transitioned = await transitionOrderStatus(existingOrder._id, 'Order Confirmed', 'System', 'Prepaid payment verified successfully (Payment Retry)');
 
-      // Clear user cart
-      try {
-        const carts = getTableData('cart.xlsx');
-        const remainingCarts = carts.filter(item => String(item.userId) !== String(req.user.id));
-        writeTableData('cart.xlsx', remainingCarts);
-      } catch (cartErr) {
-        console.error(cartErr);
-      }
+      await Cart.deleteMany({ userId });
 
-      return res.status(200).json(transitioned || existingOrder);
+      const resObj = (transitioned || existingOrder).toObject();
+      resObj.id = resObj._id;
+      return res.status(200).json(resObj);
     }
 
-    // Process fresh order creation (similar to createOrder in orderController.js)
+    // Process fresh order creation
     const {
       fullName, email, mobile, address, city, state, zip,
       shippingCharges, couponCode
-    } = orderData;
+    } = orderData || {};
 
     if (!fullName || !email || !mobile || !address || !city || !state || !zip) {
       return res.status(400).json({ message: 'Please provide all shipping and contact details' });
     }
 
-    const carts = getTableData('cart.xlsx');
-    const products = getTableData('products.xlsx');
-
-    const userCart = carts.filter(item => String(item.userId) === String(req.user.id));
+    const userCart = await Cart.find({ userId });
     if (userCart.length === 0) {
       return res.status(400).json({ message: 'Your cart is empty' });
     }
@@ -146,7 +137,13 @@ const verifyPayment = async (req, res) => {
     let subtotal = 0;
 
     for (const item of userCart) {
-      const product = products.find(p => String(p.id) === String(item.productId));
+      let product = null;
+      if (mongoose.Types.ObjectId.isValid(item.productId)) {
+        product = await Product.findById(item.productId);
+      }
+      if (!product) {
+        product = await Product.findOne({ _id: item.productId });
+      }
       if (!product) {
         return res.status(404).json({ message: 'Product not found' });
       }
@@ -158,12 +155,14 @@ const verifyPayment = async (req, res) => {
       const itemPrice = product.discountPrice ? Number(product.discountPrice) : Number(product.price);
       subtotal += itemPrice * qty;
 
+      const imagesArr = Array.isArray(product.images) ? product.images : (product.images ? [product.images] : []);
+
       orderItems.push({
-        productId: product.id,
+        productId: product._id,
         name: product.name,
         price: itemPrice,
         quantity: qty,
-        image: product.images && product.images.length > 0 ? product.images[0] : ''
+        image: imagesArr.length > 0 ? imagesArr[0] : ''
       });
     }
 
@@ -179,19 +178,25 @@ const verifyPayment = async (req, res) => {
       }
     }
 
-    const totalAmount = subtotal - discount; // Free delivery for online payments
+    const totalAmount = subtotal - discount;
 
     // Deduct stock
     for (const item of userCart) {
-      const product = products.find(p => String(p.id) === String(item.productId));
-      updateRow('products.xlsx', product.id, {
-        stock: Number(product.stock) - Number(item.quantity)
-      });
+      let product = null;
+      if (mongoose.Types.ObjectId.isValid(item.productId)) {
+        product = await Product.findById(item.productId);
+      }
+      if (!product) {
+        product = await Product.findOne({ _id: item.productId });
+      }
+      if (product) {
+        product.stock = Math.max(0, Number(product.stock) - Number(item.quantity));
+        await product.save();
+      }
     }
 
-    // Insert order record into Excel database
-    const order = insertRow('orders.xlsx', {
-      userId: req.user.id,
+    const order = await Order.create({
+      userId,
       fullName,
       email: email.toLowerCase(),
       mobile,
@@ -206,29 +211,20 @@ const verifyPayment = async (req, res) => {
       deliveryCharge: 0,
       couponCode: couponCode || '',
       items: orderItems,
-      orderStatus: 'Pending', // Fresh order starts as Pending
+      orderStatus: 'Pending',
       razorpayOrderId,
       razorpayPaymentId,
-      razorpaySignature: razorpaySignature || 'mock_signature',
-      shipmentId: '',
-      trackingId: '',
-      awbCode: '',
-      courierName: '',
-      trackingUrl: '',
-      expectedDelivery: ''
+      razorpaySignature: razorpaySignature || 'mock_signature'
     });
 
-    // Clear cart
-    const remainingCarts = carts.filter(item => String(item.userId) !== String(req.user.id));
-    writeTableData('cart.xlsx', remainingCarts);
+    await Cart.deleteMany({ userId });
+    await logOrderStatusHistory(order._id, '', 'Pending', 'System', 'Order placed successfully (prepaid payment pending)');
 
-    // Initial status history log
-    logOrderStatusHistory(order.id, '', 'Pending', 'System', 'Order placed successfully (prepaid payment pending)');
+    const transitionedOrder = await transitionOrderStatus(order._id, 'Order Confirmed', 'System', 'Prepaid payment verified successfully');
 
-    // Transition status to Order Confirmed (this dispatches shipment and alerts customer)
-    const transitionedOrder = await transitionOrderStatus(order.id, 'Order Confirmed', 'System', 'Prepaid payment verified successfully');
-
-    return res.status(201).json(transitionedOrder || order);
+    const resObj = (transitionedOrder || order).toObject();
+    resObj.id = resObj._id;
+    return res.status(201).json(resObj);
   } catch (error) {
     console.error('Error verifying payment:', error);
     return res.status(500).json({ message: 'Verification error placing order' });
@@ -239,14 +235,18 @@ const verifyPayment = async (req, res) => {
 const refundPayment = async (req, res) => {
   try {
     const { orderId } = req.params;
-    const orders = getTableData('orders.xlsx');
-    const orderIndex = orders.findIndex(o => String(o.id) === String(orderId));
+    let order = null;
+    if (mongoose.Types.ObjectId.isValid(orderId)) {
+      order = await Order.findById(orderId);
+    }
+    if (!order) {
+      order = await Order.findOne({ _id: orderId });
+    }
 
-    if (orderIndex === -1) {
+    if (!order) {
       return res.status(404).json({ message: 'Order not found' });
     }
 
-    const order = orders[orderIndex];
     if (order.paymentMethod !== 'Razorpay') {
       return res.status(400).json({ message: 'Only prepaid online orders can be refunded' });
     }
@@ -258,7 +258,6 @@ const refundPayment = async (req, res) => {
     const amountInPaise = Math.round(Number(order.totalAmount) * 100);
 
     if (razorpay && order.razorpayPaymentId && !order.razorpayPaymentId.startsWith('pay_mock')) {
-      // Execute live Razorpay refund
       await razorpay.payments.refund(order.razorpayPaymentId, {
         amount: amountInPaise,
         speed: 'normal',
@@ -268,35 +267,38 @@ const refundPayment = async (req, res) => {
 
     // Revert inventory stock
     try {
-      const products = getTableData('products.xlsx');
-      let itemsList = Array.isArray(order.items) ? order.items : JSON.parse(order.items || '[]');
-      itemsList.forEach(item => {
-        const product = products.find(p => String(p.id) === String(item.productId));
-        if (product) {
-          updateRow('products.xlsx', product.id, {
-            stock: Number(product.stock) + Number(item.quantity)
-          });
+      const itemsList = Array.isArray(order.items) ? order.items : [];
+      for (const item of itemsList) {
+        let product = null;
+        if (mongoose.Types.ObjectId.isValid(item.productId)) {
+          product = await Product.findById(item.productId);
         }
-      });
-      console.log(`Reverted stock for refunded BLC Order #${order.id}`);
+        if (!product) {
+          product = await Product.findOne({ _id: item.productId });
+        }
+        if (product) {
+          product.stock = Number(product.stock) + Number(item.quantity);
+          await product.save();
+        }
+      }
+      console.log(`Reverted stock for refunded BLC Order #${order._id}`);
     } catch (stockErr) {
       console.error(stockErr);
     }
 
-    // Update spreadsheet records
-    const updated = updateRow('orders.xlsx', order.id, {
-      paymentStatus: 'Refunded',
-      orderStatus: 'Refunded'
-    });
+    order.paymentStatus = 'Refunded';
+    order.orderStatus = 'Refunded';
+    await order.save();
 
-    // Send notification email
     try {
-      await sendOrderStatusEmail(updated, 'Refunded');
+      await sendOrderStatusEmail(order, 'Refunded');
     } catch (e) {
       console.error('Nodemailer refund notification failed:', e);
     }
 
-    return res.json({ message: 'Payment successfully refunded', order: updated });
+    const resObj = order.toObject();
+    resObj.id = resObj._id;
+    return res.json({ message: 'Payment successfully refunded', order: resObj });
   } catch (error) {
     console.error('Error processing refund:', error);
     return res.status(500).json({ message: error.message || 'Server error processing refund' });
@@ -311,15 +313,20 @@ const retryRazorpayOrder = async (req, res) => {
       return res.status(400).json({ message: 'Order ID is required' });
     }
 
-    const orders = getTableData('orders.xlsx');
-    const order = orders.find(o => String(o.id) === String(orderId));
+    let order = null;
+    if (mongoose.Types.ObjectId.isValid(orderId)) {
+      order = await Order.findById(orderId);
+    }
+    if (!order) {
+      order = await Order.findOne({ _id: orderId });
+    }
 
     if (!order) {
       return res.status(404).json({ message: 'Order not found' });
     }
 
-    // Verify ownership
-    if (String(order.userId) !== String(req.user.id)) {
+    const userId = req.user.id || req.user._id;
+    if (String(order.userId) !== String(userId)) {
       return res.status(403).json({ message: 'Not authorized to retry this order' });
     }
 
@@ -329,14 +336,12 @@ const retryRazorpayOrder = async (req, res) => {
       const options = {
         amount: amountInPaise,
         currency: 'INR',
-        receipt: `receipt_retry_${order.id}_${Date.now()}`
+        receipt: `receipt_retry_${order._id}_${Date.now()}`
       };
       const rzOrder = await razorpay.orders.create(options);
 
-      // Update order status with new razorpayOrderId
-      updateRow('orders.xlsx', order.id, {
-        razorpayOrderId: rzOrder.id
-      });
+      order.razorpayOrderId = rzOrder.id;
+      await order.save();
 
       return res.json({
         success: true,
@@ -346,12 +351,10 @@ const retryRazorpayOrder = async (req, res) => {
         mockMode: false
       });
     } else {
-      // Mock retry order
       const mockOrderId = `order_mock_${Math.random().toString(36).substring(2, 11)}`;
       
-      updateRow('orders.xlsx', order.id, {
-        razorpayOrderId: mockOrderId
-      });
+      order.razorpayOrderId = mockOrderId;
+      await order.save();
 
       return res.json({
         success: true,

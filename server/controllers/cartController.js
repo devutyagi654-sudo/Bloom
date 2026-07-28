@@ -1,35 +1,48 @@
-const { getTableData, insertRow, updateRow, deleteRow, writeTableData } = require('../config/db');
+const Cart = require('../models/Cart');
+const Product = require('../models/Product');
+const mongoose = require('mongoose');
 
 // Get user cart items
 const getCart = async (req, res) => {
   try {
-    const carts = getTableData('cart.xlsx');
-    const products = getTableData('products.xlsx');
-    
-    // Filter rows for current user
-    const userCartItems = carts.filter(item => String(item.userId) === String(req.user.id));
+    const userId = req.user.id || req.user._id;
+    const userCartItems = await Cart.find({ userId }).sort({ createdAt: -1 }).lean();
     
     // Populate product details
-    const populatedCart = userCartItems.map(item => {
-      const product = products.find(p => String(p.id) === String(item.productId));
+    const populatedCart = await Promise.all(userCartItems.map(async (item) => {
+      let product = null;
+      if (mongoose.Types.ObjectId.isValid(item.productId)) {
+        product = await Product.findById(item.productId).lean();
+      }
+      if (!product) {
+        product = await Product.findOne({ _id: item.productId }).lean();
+      }
+
+      if (!product) return null;
+
       return {
-        id: item.id,
+        id: item._id,
+        _id: item._id,
         productId: item.productId,
         quantity: Number(item.quantity),
         createdAt: item.createdAt,
-        product: product ? {
-          id: product.id,
+        product: {
+          id: product._id,
+          _id: product._id,
           name: product.name,
           price: Number(product.price),
           discountPrice: product.discountPrice ? Number(product.discountPrice) : null,
           category: product.category,
           stock: Number(product.stock),
-          images: product.images,
-        } : null
+          images: Array.isArray(product.images) ? product.images : (product.images ? [product.images] : [])
+        }
       };
-    }).filter(item => item.product !== null); // remove orphaned cart items
+    }));
+
+    // Filter out nulls (orphaned cart items)
+    const validCart = populatedCart.filter(item => item !== null);
     
-    return res.json(populatedCart);
+    return res.json(validCart);
   } catch (error) {
     console.error(error);
     return res.status(500).json({ message: 'Server error retrieving cart' });
@@ -46,8 +59,14 @@ const addToCart = async (req, res) => {
       return res.status(400).json({ message: 'Product ID is required' });
     }
     
-    const products = getTableData('products.xlsx');
-    const product = products.find(p => String(p.id) === String(productId));
+    let product = null;
+    if (mongoose.Types.ObjectId.isValid(productId)) {
+      product = await Product.findById(productId);
+    }
+    if (!product) {
+      product = await Product.findOne({ _id: productId });
+    }
+    
     if (!product) {
       return res.status(404).json({ message: 'Product not found' });
     }
@@ -56,36 +75,33 @@ const addToCart = async (req, res) => {
       return res.status(400).json({ message: 'Product is out of stock' });
     }
     
-    const carts = getTableData('cart.xlsx');
+    const userId = req.user.id || req.user._id;
+    let cartItem = await Cart.findOne({ userId, productId });
     
-    // Check if product is already in user's cart
-    const existingIndex = carts.findIndex(item => 
-      String(item.userId) === String(req.user.id) && String(item.productId) === String(productId)
-    );
-    
-    if (existingIndex !== -1) {
-      // Check stock limit
-      const currentQty = Number(carts[existingIndex].quantity);
-      const newQty = currentQty + qty;
+    if (cartItem) {
+      const newQty = cartItem.quantity + qty;
       if (newQty > Number(product.stock)) {
         return res.status(400).json({ message: `Cannot add more. Only ${product.stock} units available in stock.` });
       }
       
-      const updated = updateRow('cart.xlsx', carts[existingIndex].id, {
-        quantity: newQty
-      });
-      return res.json(updated);
+      cartItem.quantity = newQty;
+      await cartItem.save();
+      const obj = cartItem.toObject();
+      obj.id = obj._id;
+      return res.json(obj);
     } else {
       if (qty > Number(product.stock)) {
         return res.status(400).json({ message: `Cannot add ${qty} units. Only ${product.stock} available.` });
       }
       
-      const newItem = insertRow('cart.xlsx', {
-        userId: req.user.id,
+      const newItem = await Cart.create({
+        userId,
         productId,
         quantity: qty
       });
-      return res.status(201).json(newItem);
+      const obj = newItem.toObject();
+      obj.id = obj._id;
+      return res.status(201).json(obj);
     }
   } catch (error) {
     console.error(error);
@@ -97,22 +113,34 @@ const addToCart = async (req, res) => {
 const updateCartQuantity = async (req, res) => {
   try {
     const { quantity } = req.body;
-    const { id } = req.params; // cart item row ID
+    const { id } = req.params;
     
     const qty = Number(quantity);
     if (isNaN(qty) || qty <= 0) {
       return res.status(400).json({ message: 'Quantity must be a positive number' });
     }
     
-    const carts = getTableData('cart.xlsx');
-    const cartItem = carts.find(item => String(item.id) === String(id) && String(item.userId) === String(req.user.id));
+    const userId = req.user.id || req.user._id;
+    let cartItem = null;
+    if (mongoose.Types.ObjectId.isValid(id)) {
+      cartItem = await Cart.findById(id);
+    }
+    if (!cartItem) {
+      cartItem = await Cart.findOne({ _id: id, userId });
+    }
     
     if (!cartItem) {
       return res.status(404).json({ message: 'Cart item not found' });
     }
     
-    const products = getTableData('products.xlsx');
-    const product = products.find(p => String(p.id) === String(cartItem.productId));
+    let product = null;
+    if (mongoose.Types.ObjectId.isValid(cartItem.productId)) {
+      product = await Product.findById(cartItem.productId);
+    }
+    if (!product) {
+      product = await Product.findOne({ _id: cartItem.productId });
+    }
+    
     if (!product) {
       return res.status(404).json({ message: 'Product not found' });
     }
@@ -121,11 +149,12 @@ const updateCartQuantity = async (req, res) => {
       return res.status(400).json({ message: `Only ${product.stock} units available in stock.` });
     }
     
-    const updated = updateRow('cart.xlsx', id, {
-      quantity: qty
-    });
+    cartItem.quantity = qty;
+    await cartItem.save();
     
-    return res.json(updated);
+    const obj = cartItem.toObject();
+    obj.id = obj._id;
+    return res.json(obj);
   } catch (error) {
     console.error(error);
     return res.status(500).json({ message: 'Server error updating cart quantity' });
@@ -135,16 +164,21 @@ const updateCartQuantity = async (req, res) => {
 // Remove from cart
 const removeFromCart = async (req, res) => {
   try {
-    const { id } = req.params; // cart item row ID
+    const { id } = req.params;
+    const userId = req.user.id || req.user._id;
     
-    const carts = getTableData('cart.xlsx');
-    const cartItem = carts.find(item => String(item.id) === String(id) && String(item.userId) === String(req.user.id));
+    let deleted = null;
+    if (mongoose.Types.ObjectId.isValid(id)) {
+      deleted = await Cart.findOneAndDelete({ _id: id, userId });
+    }
+    if (!deleted) {
+      deleted = await Cart.findOneAndDelete({ _id: id, userId });
+    }
     
-    if (!cartItem) {
+    if (!deleted) {
       return res.status(404).json({ message: 'Cart item not found' });
     }
     
-    deleteRow('cart.xlsx', id);
     return res.json({ message: 'Item removed from cart' });
   } catch (error) {
     console.error(error);
@@ -155,9 +189,8 @@ const removeFromCart = async (req, res) => {
 // Clear entire cart
 const clearCart = async (req, res) => {
   try {
-    const carts = getTableData('cart.xlsx');
-    const filteredCarts = carts.filter(item => String(item.userId) !== String(req.user.id));
-    writeTableData('cart.xlsx', filteredCarts);
+    const userId = req.user.id || req.user._id;
+    await Cart.deleteMany({ userId });
     return res.json({ message: 'Cart cleared successfully' });
   } catch (error) {
     console.error(error);

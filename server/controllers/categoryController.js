@@ -1,9 +1,9 @@
-const { getTableData } = require('../config/db');
+const Category = require('../models/Category');
 
 // Get all categories
 const getCategories = async (req, res) => {
   try {
-    const categories = getTableData('categories.xlsx');
+    const categories = await Category.find().sort({ createdAt: -1 });
     return res.json(categories);
   } catch (error) {
     console.error(error);

@@ -2,7 +2,12 @@ const PDFDocument = require('pdfkit');
 const nodemailer = require('nodemailer');
 const axios = require('axios');
 const Razorpay = require('razorpay');
-const { getTableData, insertRow, updateRow, writeTableData } = require('../config/db');
+const mongoose = require('mongoose');
+
+const Order = require('../models/Order');
+const Product = require('../models/Product');
+const Cart = require('../models/Cart');
+const OrderStatusHistory = require('../models/OrderStatusHistory');
 
 // Initialize Razorpay SDK if keys are configured
 let razorpay = null;
@@ -24,7 +29,7 @@ if (isSMTPConfigured) {
   transporter = nodemailer.createTransport({
     host: process.env.SMTP_HOST,
     port: Number(process.env.SMTP_PORT || 587),
-    secure: process.env.SMTP_SECURE === 'true', // true for 465, false for other ports
+    secure: process.env.SMTP_SECURE === 'true',
     auth: {
       user: process.env.SMTP_USER,
       pass: process.env.SMTP_PASS
@@ -35,23 +40,23 @@ if (isSMTPConfigured) {
 // Mail Dispatcher Helper
 const sendOrderStatusEmail = async (order, status) => {
   const mailSubjectMap = {
-    'Pending': `bloomluxecollection - Order Placed [#BLC-${order.id}]`,
-    'Order Confirmed': `bloomluxecollection - Order Confirmed [#BLC-${order.id}]`,
-    'Processing': `bloomluxecollection - Order Processing [#BLC-${order.id}]`,
-    'Ready to Ship': `bloomluxecollection - Ready to Ship [#BLC-${order.id}]`,
-    'Shipped': `bloomluxecollection - Order Shipped [#BLC-${order.id}]`,
-    'Out for Delivery': `bloomluxecollection - Out for Delivery [#BLC-${order.id}]`,
-    'Delivered': `bloomluxecollection - Order Delivered [#BLC-${order.id}]`,
-    'Cancelled': `bloomluxecollection - Order Cancelled [#BLC-${order.id}]`,
-    'Return Requested': `bloomluxecollection - Return Requested [#BLC-${order.id}]`,
-    'Returned': `bloomluxecollection - Order Returned [#BLC-${order.id}]`,
-    'Refunded': `bloomluxecollection - Refund Completed [#BLC-${order.id}]`,
-    'Failed': `bloomluxecollection - Payment Failed [#BLC-${order.id}]`
+    'Pending': `bloomluxecollection - Order Placed [#BLC-${order._id || order.id}]`,
+    'Order Confirmed': `bloomluxecollection - Order Confirmed [#BLC-${order._id || order.id}]`,
+    'Processing': `bloomluxecollection - Order Processing [#BLC-${order._id || order.id}]`,
+    'Ready to Ship': `bloomluxecollection - Ready to Ship [#BLC-${order._id || order.id}]`,
+    'Shipped': `bloomluxecollection - Order Shipped [#BLC-${order._id || order.id}]`,
+    'Out for Delivery': `bloomluxecollection - Out for Delivery [#BLC-${order._id || order.id}]`,
+    'Delivered': `bloomluxecollection - Order Delivered [#BLC-${order._id || order.id}]`,
+    'Cancelled': `bloomluxecollection - Order Cancelled [#BLC-${order._id || order.id}]`,
+    'Return Requested': `bloomluxecollection - Return Requested [#BLC-${order._id || order.id}]`,
+    'Returned': `bloomluxecollection - Order Returned [#BLC-${order._id || order.id}]`,
+    'Refunded': `bloomluxecollection - Refund Completed [#BLC-${order._id || order.id}]`,
+    'Failed': `bloomluxecollection - Payment Failed [#BLC-${order._id || order.id}]`
   };
 
-  const subject = mailSubjectMap[status] || `bloomluxecollection - Status Update [#BLC-${order.id}]`;
+  const subject = mailSubjectMap[status] || `bloomluxecollection - Status Update [#BLC-${order._id || order.id}]`;
 
-  const itemDetails = order.items.map(item => 
+  const itemDetails = (order.items || []).map(item => 
     `<tr>
       <td style="padding: 10px; border-bottom: 1px solid #f2e8dc;">${item.name} x ${item.quantity}</td>
       <td style="padding: 10px; border-bottom: 1px solid #f2e8dc; text-align: right;">₹${item.price}</td>
@@ -70,7 +75,7 @@ const sendOrderStatusEmail = async (order, status) => {
 
       <div style="background-color: #ffffff; padding: 15px; border-radius: 8px; border: 1px solid #f7efe6; margin: 20px 0;">
         <h3 style="margin-top: 0; border-bottom: 1px solid #f7efe6; padding-bottom: 8px;">Order Details</h3>
-        <p style="margin: 5px 0;"><strong>Order Reference:</strong> #BLC-${order.id}</p>
+        <p style="margin: 5px 0;"><strong>Order Reference:</strong> #BLC-${order._id || order.id}</p>
         <p style="margin: 5px 0;"><strong>Payment Method:</strong> ${order.paymentMethod} (${order.paymentStatus})</p>
         ${order.awbCode ? `<p style="margin: 5px 0;"><strong>AWB Tracking ID:</strong> ${order.awbCode} (${order.courierName})</p>` : ''}
         ${order.trackingUrl ? `<p style="margin: 5px 0;"><a href="${order.trackingUrl}" style="color: #c18055; font-weight: bold;">Track Live on Courier Portal</a></p>` : ''}
@@ -109,39 +114,48 @@ const sendOrderStatusEmail = async (order, status) => {
         subject: subject,
         html: htmlContent
       });
-      console.log(`Email successfully dispatched to ${order.email} for order #${order.id} status: ${status}`);
+      console.log(`Email successfully dispatched to ${order.email} for order #${order._id || order.id} status: ${status}`);
     } catch (err) {
       console.error('SMTP Send Error:', err.message);
     }
   } else {
-    // Print to Console when running in local sandbox
     console.log(`[SIMULATED EMAIL LOG] to: ${order.email} | Subject: ${subject} | Status: ${status}`);
   }
 };
 
-const logOrderStatusHistory = (orderId, prevStatus, newStatus, updatedBy, notes = '') => {
-  insertRow('order_status_history.xlsx', {
-    orderId: String(orderId),
-    prevStatus: prevStatus || '',
-    newStatus: newStatus || '',
-    updatedBy: updatedBy || 'System',
-    notes: notes || '',
-    timestamp: new Date().toISOString()
-  });
+const logOrderStatusHistory = async (orderId, previousStatus, newStatus, updatedBy = 'System', notes = '') => {
+  try {
+    await OrderStatusHistory.create({
+      orderId: String(orderId),
+      previousStatus: previousStatus || '',
+      newStatus: newStatus || '',
+      updatedBy: updatedBy || 'System',
+      notes: notes || '',
+      timestamp: new Date()
+    });
+  } catch (err) {
+    console.error('Error logging order status history:', err.message);
+  }
 };
 
 const transitionOrderStatus = async (orderId, newStatus, updatedBy = 'System', notes = '') => {
-  const orders = getTableData('orders.xlsx');
-  const order = orders.find(o => String(o.id) === String(orderId));
+  let order = null;
+  if (mongoose.Types.ObjectId.isValid(orderId)) {
+    order = await Order.findById(orderId);
+  }
+  if (!order) {
+    order = await Order.findOne({ _id: orderId });
+  }
+
   if (!order) return null;
 
-  const prevStatus = order.orderStatus;
-  if (prevStatus === newStatus) return order;
+  const previousStatus = order.orderStatus;
+  if (previousStatus === newStatus) return order;
 
-  // Update order status in orders.xlsx
-  let updatedOrder = updateRow('orders.xlsx', orderId, {
-    orderStatus: newStatus
-  });
+  order.orderStatus = newStatus;
+  await order.save();
+
+  let updatedOrder = order;
 
   // If status transitions to "Order Confirmed" and shipment isn't created, trigger dispatch
   if (newStatus === 'Order Confirmed' && !updatedOrder.awbCode) {
@@ -156,10 +170,8 @@ const transitionOrderStatus = async (orderId, newStatus, updatedBy = 'System', n
     }
   }
 
-  // Insert row in history logs
-  logOrderStatusHistory(orderId, prevStatus, newStatus, updatedBy, notes);
+  await logOrderStatusHistory(orderId, previousStatus, newStatus, updatedBy, notes);
 
-  // Send status email notification
   try {
     await sendOrderStatusEmail(updatedOrder, newStatus);
   } catch (err) {
@@ -169,7 +181,7 @@ const transitionOrderStatus = async (orderId, newStatus, updatedBy = 'System', n
   return updatedOrder;
 };
 
-// Create a new order (Supports Cash on Delivery / COD)
+// Create a new order (Supports Cash on Delivery / COD & Razorpay)
 const createOrder = async (req, res) => {
   try {
     const {
@@ -185,21 +197,25 @@ const createOrder = async (req, res) => {
       return res.status(400).json({ message: 'Invalid payment method for direct order endpoint' });
     }
     
-    // Fetch cart items
-    const carts = getTableData('cart.xlsx');
-    const products = getTableData('products.xlsx');
+    const userId = req.user.id || req.user._id;
+    const userCart = await Cart.find({ userId });
     
-    const userCart = carts.filter(item => String(item.userId) === String(req.user.id));
     if (userCart.length === 0) {
       return res.status(400).json({ message: 'Your cart is empty' });
     }
     
-    // Validate stock and build order items list
     const orderItems = [];
     let subtotal = 0;
     
     for (const item of userCart) {
-      const product = products.find(p => String(p.id) === String(item.productId));
+      let product = null;
+      if (mongoose.Types.ObjectId.isValid(item.productId)) {
+        product = await Product.findById(item.productId);
+      }
+      if (!product) {
+        product = await Product.findOne({ _id: item.productId });
+      }
+
       if (!product) {
         return res.status(404).json({ message: `Product not found` });
       }
@@ -214,16 +230,17 @@ const createOrder = async (req, res) => {
       const itemPrice = product.discountPrice ? Number(product.discountPrice) : Number(product.price);
       subtotal += itemPrice * qty;
       
+      const imagesArr = Array.isArray(product.images) ? product.images : (product.images ? [product.images] : []);
+      
       orderItems.push({
-        productId: product.id,
+        productId: product._id,
         name: product.name,
         price: itemPrice,
         quantity: qty,
-        image: product.images && product.images.length > 0 ? product.images[0] : ''
+        image: imagesArr.length > 0 ? imagesArr[0] : ''
       });
     }
     
-    // Apply coupon discount
     let discount = 0;
     if (couponCode) {
       const code = couponCode.toUpperCase().trim();
@@ -236,20 +253,25 @@ const createOrder = async (req, res) => {
       }
     }
     
-    const deliveryCharge = paymentMethod === 'COD' ? 50 : 0; // FREE for online prepaid!
+    const deliveryCharge = paymentMethod === 'COD' ? 50 : 0;
     const totalAmount = subtotal - discount + deliveryCharge;
     
-    // Deduct stock in products table immediately (to block inventory during checkout retry timeframe)
+    // Deduct stock in Product documents
     for (const item of userCart) {
-      const product = products.find(p => String(p.id) === String(item.productId));
-      const currentStock = Number(product.stock);
-      updateRow('products.xlsx', product.id, {
-        stock: currentStock - Number(item.quantity)
-      });
+      let product = null;
+      if (mongoose.Types.ObjectId.isValid(item.productId)) {
+        product = await Product.findById(item.productId);
+      }
+      if (!product) {
+        product = await Product.findOne({ _id: item.productId });
+      }
+      if (product) {
+        product.stock = Math.max(0, Number(product.stock) - Number(item.quantity));
+        await product.save();
+      }
     }
     
     if (paymentMethod === 'Razorpay') {
-      // Generate Razorpay Order
       let rzOrderId = '';
       let mockMode = true;
       const amountInPaise = Math.round(Number(totalAmount) * 100);
@@ -271,9 +293,8 @@ const createOrder = async (req, res) => {
         rzOrderId = `order_mock_${Math.random().toString(36).substring(2, 11)}`;
       }
 
-      // Create Failed order draft to be retried
-      const order = insertRow('orders.xlsx', {
-        userId: req.user.id,
+      const order = await Order.create({
+        userId,
         fullName,
         email: email.toLowerCase(),
         mobile,
@@ -282,29 +303,23 @@ const createOrder = async (req, res) => {
         state,
         zip,
         paymentMethod: 'Razorpay',
-        paymentStatus: 'Failed', // Failed until verified
+        paymentStatus: 'Failed',
         totalAmount: Number(totalAmount.toFixed(2)),
         shippingCharges: 0,
         deliveryCharge: 0,
         couponCode: couponCode || '',
         items: orderItems,
-        orderStatus: 'Pending', // Pending payment
-        razorpayOrderId: rzOrderId,
-        razorpayPaymentId: '',
-        razorpaySignature: '',
-        shipmentId: '',
-        trackingId: '',
-        awbCode: '',
-        courierName: '',
-        trackingUrl: '',
-        expectedDelivery: ''
+        orderStatus: 'Pending',
+        razorpayOrderId: rzOrderId
       });
 
-      logOrderStatusHistory(order.id, '', 'Pending', 'System', 'Order draft created (prepaid payment pending)');
+      const orderObj = order.toObject();
+      orderObj.id = orderObj._id;
 
-      // Return draft with mockMode indicator for frontend loading dialog
+      await logOrderStatusHistory(order._id, '', 'Pending', 'System', 'Order draft created (prepaid payment pending)');
+
       return res.status(201).json({
-        ...order,
+        ...orderObj,
         mockMode,
         amount: amountInPaise,
         currency: 'INR'
@@ -312,8 +327,8 @@ const createOrder = async (req, res) => {
     }
 
     // COD Direct Placement
-    const order = insertRow('orders.xlsx', {
-      userId: req.user.id,
+    const order = await Order.create({
+      userId,
       fullName,
       email: email.toLowerCase(),
       mobile,
@@ -328,33 +343,25 @@ const createOrder = async (req, res) => {
       deliveryCharge: deliveryCharge,
       couponCode: couponCode || '',
       items: orderItems,
-      orderStatus: 'Pending', // Every new order starts with Pending
-      razorpayOrderId: '',
-      razorpayPaymentId: '',
-      razorpaySignature: '',
-      shipmentId: '',
-      trackingId: '',
-      awbCode: '',
-      courierName: '',
-      trackingUrl: '',
-      expectedDelivery: ''
+      orderStatus: 'Pending',
+      razorpayOrderId: ''
     });
+
+    const orderObj = order.toObject();
+    orderObj.id = orderObj._id;
     
     // Clear user's cart
-    const remainingCarts = carts.filter(item => String(item.userId) !== String(req.user.id));
-    writeTableData('cart.xlsx', remainingCarts);
+    await Cart.deleteMany({ userId });
 
-    // Log the initial status to history
-    logOrderStatusHistory(order.id, '', 'Pending', 'System', 'Order placed successfully (Cash on Delivery)');
+    await logOrderStatusHistory(order._id, '', 'Pending', 'System', 'Order placed successfully (Cash on Delivery)');
 
-    // Trigger confirmation email for Pending status
     try {
-      await sendOrderStatusEmail(order, 'Pending');
+      await sendOrderStatusEmail(orderObj, 'Pending');
     } catch (emailErr) {
       console.error('Order notification email failed:', emailErr.message);
     }
     
-    return res.status(201).json(order);
+    return res.status(201).json(orderObj);
   } catch (error) {
     console.error(error);
     return res.status(500).json({ message: 'Server error placing order' });
@@ -364,13 +371,11 @@ const createOrder = async (req, res) => {
 // Get orders of logged-in user
 const getMyOrders = async (req, res) => {
   try {
-    const orders = getTableData('orders.xlsx');
-    const userOrders = orders.filter(o => String(o.userId) === String(req.user.id));
+    const userId = req.user.id || req.user._id;
+    const orders = await Order.find({ userId }).sort({ createdAt: -1 }).lean();
     
-    // Sort orders by newest first
-    userOrders.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-    
-    return res.json(userOrders);
+    const formatted = orders.map(o => ({ ...o, id: o._id }));
+    return res.json(formatted);
   } catch (error) {
     console.error(error);
     return res.status(500).json({ message: 'Server error retrieving orders' });
@@ -380,19 +385,27 @@ const getMyOrders = async (req, res) => {
 // Get single order details
 const getOrderDetails = async (req, res) => {
   try {
-    const orders = getTableData('orders.xlsx');
-    const order = orders.find(o => String(o.id) === String(req.params.id));
+    const paramId = req.params.id;
+    let order = null;
+    if (mongoose.Types.ObjectId.isValid(paramId)) {
+      order = await Order.findById(paramId).lean();
+    }
+    if (!order) {
+      order = await Order.findOne({ _id: paramId }).lean();
+    }
     
     if (!order) {
       return res.status(404).json({ message: 'Order not found' });
     }
     
-    // Only allow owner or admin to see order details
-    if (String(order.userId) !== String(req.user.id) && req.user.role?.toUpperCase() !== 'ADMIN') {
+    const userId = req.user.id || req.user._id;
+    const isAdmin = String(req.user.role || '').toUpperCase() === 'ADMIN' || req.user.email === 'admin@blc.com';
+    
+    if (String(order.userId) !== String(userId) && !isAdmin) {
       return res.status(403).json({ message: 'Access denied' });
     }
     
-    return res.json(order);
+    return res.json({ ...order, id: order._id });
   } catch (error) {
     console.error(error);
     return res.status(500).json({ message: 'Server error fetching order details' });
@@ -403,20 +416,27 @@ const getOrderDetails = async (req, res) => {
 const generateInvoice = async (req, res) => {
   try {
     const { orderId } = req.params;
-    const orders = getTableData('orders.xlsx');
-    const order = orders.find(o => String(o.id) === String(orderId));
+    let order = null;
+    if (mongoose.Types.ObjectId.isValid(orderId)) {
+      order = await Order.findById(orderId).lean();
+    }
+    if (!order) {
+      order = await Order.findOne({ _id: orderId }).lean();
+    }
 
     if (!order) {
       return res.status(404).json({ message: 'Order not found' });
     }
 
-    // Authorization check
-    if (String(order.userId) !== String(req.user.id) && req.user.role?.toUpperCase() !== 'ADMIN') {
+    const userId = req.user.id || req.user._id;
+    const isAdmin = String(req.user.role || '').toUpperCase() === 'ADMIN' || req.user.email === 'admin@blc.com';
+
+    if (String(order.userId) !== String(userId) && !isAdmin) {
       return res.status(403).json({ message: 'Not authorized to download this invoice' });
     }
 
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename=invoice_${order.id}.pdf`);
+    res.setHeader('Content-Disposition', `attachment; filename=invoice_${order._id}.pdf`);
 
     const doc = new PDFDocument({ margin: 50 });
     doc.pipe(res);
@@ -428,7 +448,7 @@ const generateInvoice = async (req, res) => {
 
     // Invoice Meta details
     const invoiceY = doc.y;
-    const invoiceNo = `INV2026${String(order.id).padStart(4, '0')}`;
+    const invoiceNo = `INV2026${String(order._id).substring(0, 8).toUpperCase()}`;
     doc.font('Times-Bold').fontSize(14).fillColor('#220f05').text('INVOICE DETAILS');
     doc.font('Times-Roman').fontSize(10).fillColor('#444444');
     doc.text(`Invoice No: ${invoiceNo}`);
@@ -436,7 +456,7 @@ const generateInvoice = async (req, res) => {
     doc.text(`Payment Method: ${order.paymentMethod}`);
     doc.text(`Payment Status: ${order.paymentStatus}`);
 
-    // Shipping address details aligned to the right
+    // Shipping address details
     doc.font('Times-Bold').fontSize(14).fillColor('#220f05').text('SHIPPING ADDRESS', 320, invoiceY);
     doc.font('Times-Roman').fontSize(10).fillColor('#444444');
     doc.text(order.fullName, 320);
@@ -446,7 +466,6 @@ const generateInvoice = async (req, res) => {
     doc.text(`GSTIN Reference: 07BLOOM2026M1Z2`, 320);
     doc.text(`Store PAN Reference: BLOOMPAN2026M`, 320);
 
-    // Render separator line
     doc.moveDown(3);
     doc.strokeColor('#eccfb2').lineWidth(1).moveTo(50, doc.y).lineTo(550, doc.y).stroke();
     doc.moveDown(1.5);
@@ -464,24 +483,22 @@ const generateInvoice = async (req, res) => {
     doc.strokeColor('#f7efe6').lineWidth(1).moveTo(50, doc.y).lineTo(550, doc.y).stroke();
     doc.moveDown(1);
 
-    // Itemized table rows
     doc.font('Times-Roman').fontSize(10).fillColor('#220f05');
-    order.items.forEach(item => {
+    (order.items || []).forEach(item => {
       const currentY = doc.y;
       const total = Number(item.price) * Number(item.quantity);
       doc.text(item.name, 50, currentY, { width: 200 });
-      doc.text('7113', 260, currentY, { width: 60, align: 'center' }); // HSN: 7113 for gold/precious jewelry
+      doc.text('7113', 260, currentY, { width: 60, align: 'center' });
       doc.text(`₹${item.price}`, 320, currentY, { width: 70, align: 'right' });
       doc.text(`${item.quantity}`, 395, currentY, { width: 50, align: 'center' });
       doc.text(`₹${total}`, 450, currentY, { width: 100, align: 'right' });
       doc.moveDown(1.5);
     });
 
-    // If COD, show delivery charges as an item row
     if (Number(order.deliveryCharge) > 0) {
       const currentY = doc.y;
       doc.text('Cash Collection & Shipping Charges', 50, currentY, { width: 200 });
-      doc.text('9968', 260, currentY, { width: 60, align: 'center' }); // SAC: 9968 for logistics/postal
+      doc.text('9968', 260, currentY, { width: 60, align: 'center' });
       doc.text(`₹${order.deliveryCharge}`, 320, currentY, { width: 70, align: 'right' });
       doc.text('1', 395, currentY, { width: 50, align: 'center' });
       doc.text(`₹${order.deliveryCharge}`, 450, currentY, { width: 100, align: 'right' });
@@ -491,52 +508,43 @@ const generateInvoice = async (req, res) => {
     doc.strokeColor('#eccfb2').lineWidth(1).moveTo(50, doc.y).lineTo(550, doc.y).stroke();
     doc.moveDown(1.5);
 
-    // Calculations
     const calculationsY = doc.y;
     doc.font('Times-Roman').fontSize(10).fillColor('#444444');
     doc.text('Subtotal:', 320, calculationsY);
     
-    // Calculate subtotal from items
-    const sub = order.items.reduce((acc, i) => acc + (Number(i.price) * Number(i.quantity)), 0);
+    const sub = (order.items || []).reduce((acc, i) => acc + (Number(i.price) * Number(i.quantity)), 0);
     doc.text(`₹${sub}`, 450, calculationsY, { align: 'right' });
 
-    // Discount if any
     doc.moveDown(0.8);
-    const discount = sub - Number(order.totalAmount) + Number(order.deliveryCharge);
+    const discount = sub - Number(order.totalAmount) + Number(order.deliveryCharge || 0);
     doc.text(`Discount / Coupon:`, 320, doc.y);
-    doc.text(`-₹${discount.toFixed(2)}`, 450, doc.y, { align: 'right' });
+    doc.text(`-₹${Math.max(0, discount).toFixed(2)}`, 450, doc.y, { align: 'right' });
 
-    // Delivery charges
     doc.moveDown(0.8);
     doc.text(`Shipping & Delivery:`, 320, doc.y);
     doc.text(Number(order.deliveryCharge) > 0 ? `₹${order.deliveryCharge}` : 'FREE', 450, doc.y, { align: 'right' });
 
-    // GST Tax
     doc.moveDown(0.8);
-    const tax = Number(order.totalAmount) * 0.18; // 18% inclusive GST
+    const tax = Number(order.totalAmount) * 0.18;
     doc.text(`GST (18% inclusive):`, 320, doc.y);
     doc.text(`₹${tax.toFixed(2)}`, 450, doc.y, { align: 'right' });
 
-    // Grand total
     doc.moveDown(1.2);
     doc.font('Times-Bold').fontSize(12).fillColor('#2e1407').text('Grand Total:', 320, doc.y);
     doc.text(`₹${order.totalAmount}`, 450, doc.y, { align: 'right' });
 
-    // Render QR Code image for order tracking live
     try {
-      const trackingUrl = `http://localhost:5173/orders/track/${order.id}`;
+      const trackingUrl = `http://localhost:5173/orders/track/${order._id}`;
       const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(trackingUrl)}`;
       const qrResponse = await axios.get(qrApiUrl, { responseType: 'arraybuffer' });
       const qrBuffer = Buffer.from(qrResponse.data, 'binary');
 
-      // Place QR code bottom left
       doc.image(qrBuffer, 50, calculationsY, { width: 90 });
       doc.font('Times-Roman').fontSize(8).fillColor('#8a502d').text('Scan to Track Live Status', 50, calculationsY + 98, { width: 90, align: 'center' });
     } catch (qrError) {
       console.error('Failed to include tracking QR code in PDF invoice:', qrError.message);
     }
 
-    // Thank you message footer
     doc.font('Times-Italic').fontSize(11).fillColor('#8a502d').text('Thank you for shopping at bloomluxecollection.', 50, doc.y + 40, { align: 'center' });
 
     doc.end();

@@ -1,38 +1,43 @@
-const { getTableData, updateRow } = require('../config/db');
+const Product = require('../models/Product');
+const mongoose = require('mongoose');
 
 // Get all products (with filtering, sorting, searching)
 const getProducts = async (req, res) => {
   try {
-    const products = getTableData('products.xlsx');
-    let filteredProducts = products.map(p => {
-      let parsedImages = [];
-      if (p.images) {
-        if (typeof p.images === 'string') {
-          try {
-            parsedImages = JSON.parse(p.images);
-          } catch (e) {
-            parsedImages = [p.images];
-          }
-        } else if (Array.isArray(p.images)) {
-          parsedImages = p.images;
-        }
-      }
-      return { ...p, images: parsedImages };
-    });
+    const query = {};
+
+    // Badges/Flags filters
+    if (req.query.isTrending === 'true') {
+      query.isTrending = true;
+    }
+    if (req.query.isBestSeller === 'true') {
+      query.isBestSeller = true;
+    }
+    if (req.query.isFeatured === 'true') {
+      query.isFeatured = true;
+    }
+    if (req.query.isNewArrival === 'true') {
+      query.isNewArrival = true;
+    }
+    if (req.query.limitedOffer === 'true') {
+      query.limitedOffer = true;
+    }
+
+    let products = await Product.find(query).lean();
 
     // Search query
     if (req.query.search) {
       const search = req.query.search.toLowerCase();
-      filteredProducts = filteredProducts.filter(p => 
-        String(p.name).toLowerCase().includes(search) || 
-        String(p.description).toLowerCase().includes(search)
+      products = products.filter(p => 
+        String(p.name || '').toLowerCase().includes(search) || 
+        String(p.description || '').toLowerCase().includes(search)
       );
     }
 
     // Category filter
     if (req.query.category) {
       const cat = req.query.category.toLowerCase().trim();
-      filteredProducts = filteredProducts.filter(p => {
+      products = products.filter(p => {
         const prodCat = String(p.category || '').toLowerCase().trim();
         const prodName = String(p.name || '').toLowerCase();
         
@@ -49,43 +54,31 @@ const getProducts = async (req, res) => {
           return prodCat === 'hamper' || prodCat === 'hampers' || prodName.includes('hamper') || prodName.includes('box');
         }
         
-        // Default strict comparison
         return prodCat === cat;
       });
     }
 
-    // Badges/Flags filters
-    if (req.query.isTrending === 'true') {
-      filteredProducts = filteredProducts.filter(p => p.isTrending === true || String(p.isTrending) === 'true');
-    }
-    if (req.query.isBestSeller === 'true') {
-      filteredProducts = filteredProducts.filter(p => p.isBestSeller === true || String(p.isBestSeller) === 'true');
-    }
-    if (req.query.isFeatured === 'true') {
-      filteredProducts = filteredProducts.filter(p => p.isFeatured === true || String(p.isFeatured) === 'true');
-    }
-    if (req.query.isNewArrival === 'true') {
-      filteredProducts = filteredProducts.filter(p => p.isNewArrival === true || String(p.isNewArrival) === 'true');
-    }
-    if (req.query.limitedOffer === 'true') {
-      filteredProducts = filteredProducts.filter(p => p.limitedOffer === true || String(p.limitedOffer) === 'true');
-    }
-
-    // Sort by price or date
+    // Sort by price or date or ratings
     if (req.query.sort) {
       const sort = req.query.sort;
       if (sort === 'price-low-high') {
-        filteredProducts.sort((a, b) => Number(a.price) - Number(b.price));
+        products.sort((a, b) => Number(a.price) - Number(b.price));
       } else if (sort === 'price-high-low') {
-        filteredProducts.sort((a, b) => Number(b.price) - Number(a.price));
+        products.sort((a, b) => Number(b.price) - Number(a.price));
       } else if (sort === 'newest') {
-        filteredProducts.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        products.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
       } else if (sort === 'ratings') {
-        filteredProducts.sort((a, b) => Number(b.ratings || 0) - Number(a.ratings || 0));
+        products.sort((a, b) => Number(b.ratings || 0) - Number(a.ratings || 0));
       }
     }
 
-    return res.json(filteredProducts);
+    const formattedProducts = products.map(p => ({
+      ...p,
+      id: p._id,
+      images: Array.isArray(p.images) ? p.images : (p.images ? [p.images] : [])
+    }));
+
+    return res.json(formattedProducts);
   } catch (error) {
     console.error(error);
     return res.status(500).json({ message: 'Server error fetching products' });
@@ -95,28 +88,25 @@ const getProducts = async (req, res) => {
 // Get product details
 const getProductById = async (req, res) => {
   try {
-    const products = getTableData('products.xlsx');
-    const product = products.find(p => String(p.id) === String(req.params.id));
-    
+    const paramId = req.params.id;
+    let product = null;
+
+    if (mongoose.Types.ObjectId.isValid(paramId)) {
+      product = await Product.findById(paramId);
+    }
+    if (!product) {
+      product = await Product.findOne({ _id: paramId });
+    }
+
     if (!product) {
       return res.status(404).json({ message: 'Product not found' });
     }
-    
-    let parsedImages = [];
-    if (product.images) {
-      if (typeof product.images === 'string') {
-        try {
-          parsedImages = JSON.parse(product.images);
-        } catch (e) {
-          parsedImages = [product.images];
-        }
-      } else if (Array.isArray(product.images)) {
-        parsedImages = product.images;
-      }
-    }
-    
-    const formattedProduct = { ...product, images: parsedImages };
-    return res.json(formattedProduct);
+
+    const productObj = product.toObject();
+    productObj.id = productObj._id;
+    productObj.images = Array.isArray(productObj.images) ? productObj.images : (productObj.images ? [productObj.images] : []);
+
+    return res.json(productObj);
   } catch (error) {
     console.error(error);
     return res.status(500).json({ message: 'Server error fetching product details' });
@@ -132,47 +122,48 @@ const addProductReview = async (req, res) => {
       return res.status(400).json({ message: 'Please provide rating and comment' });
     }
     
-    const products = getTableData('products.xlsx');
-    const productIndex = products.findIndex(p => String(p.id) === String(req.params.id));
+    const paramId = req.params.id;
+    let product = null;
+    if (mongoose.Types.ObjectId.isValid(paramId)) {
+      product = await Product.findById(paramId);
+    }
+    if (!product) {
+      product = await Product.findOne({ _id: paramId });
+    }
     
-    if (productIndex === -1) {
+    if (!product) {
       return res.status(404).json({ message: 'Product not found' });
     }
     
-    const product = products[productIndex];
-    
-    // Parse reviews if it's string, else default to array
-    let reviews = [];
-    if (product.reviews) {
-      reviews = Array.isArray(product.reviews) ? product.reviews : [];
-    }
+    const userId = req.user.id || req.user._id;
+    const reviews = product.reviews || [];
     
     // Check if user already reviewed
-    const alreadyReviewed = reviews.some(r => String(r.userId) === String(req.user.id));
+    const alreadyReviewed = reviews.some(r => String(r.userId) === String(userId));
     if (alreadyReviewed) {
       return res.status(400).json({ message: 'Product already reviewed by you' });
     }
     
     const review = {
-      userId: req.user.id,
+      userId: userId,
       userName: req.user.fullName,
       rating: Number(rating),
       comment,
-      createdAt: new Date().toISOString()
+      createdAt: new Date()
     };
     
-    reviews.push(review);
+    product.reviews.push(review);
     
     // Recalculate average ratings
-    const totalRating = reviews.reduce((acc, item) => item.rating + acc, 0);
-    const avgRating = totalRating / reviews.length;
+    const totalRating = product.reviews.reduce((acc, item) => item.rating + acc, 0);
+    product.ratings = Number((totalRating / product.reviews.length).toFixed(1));
     
-    const updated = updateRow('products.xlsx', product.id, {
-      reviews: reviews,
-      ratings: Number(avgRating.toFixed(1))
-    });
+    await product.save();
     
-    return res.status(201).json({ message: 'Review added successfully', product: updated });
+    const productObj = product.toObject();
+    productObj.id = productObj._id;
+
+    return res.status(201).json({ message: 'Review added successfully', product: productObj });
   } catch (error) {
     console.error(error);
     return res.status(500).json({ message: 'Server error adding review' });
