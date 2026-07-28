@@ -122,12 +122,6 @@ const Login = () => {
           </Link>
         </div>
 
-        {/* Admin test account credentials callout */}
-        <div className="bg-[#F4DDD2]/40 dark:bg-[#120a06]/40 border border-[#C98A63]/25 dark:border-[#C98A63]/15 rounded-xl p-3 text-[10px] text-[#4A3226]/60 dark:text-[#F7E8DF]/50 mt-6 leading-relaxed">
-          <span className="font-bold text-[#C98A63] uppercase tracking-widest block mb-1">Testing Admin Account</span>
-          Email: <span className="text-[#4A3226] dark:text-white font-mono">admin@blc.com</span> • Password: <span className="text-[#4A3226] dark:text-white font-mono">admin9090</span>
-        </div>
-
       </div>
     </div>
   );

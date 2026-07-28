@@ -73,24 +73,6 @@ const loginUser = async (req, res) => {
       return res.status(400).json({ message: 'Please enter all credentials' });
     }
     
-    // Check for strict hardcoded admin credentials
-    if (emailOrMobile.toLowerCase() === 'admin@blc.com') {
-      if (password === 'admin9090') {
-        const adminId = 'admin';
-        const token = generateToken(adminId, 'ADMIN');
-        return res.json({
-          id: adminId,
-          fullName: 'Atelier Admin',
-          email: 'admin@blc.com',
-          mobile: '9999999999',
-          role: 'ADMIN',
-          token
-        });
-      } else {
-        return res.status(401).json({ message: 'Invalid credentials' });
-      }
-    }
-    
     const users = getTableData('users.xlsx');
     
     // Find user by email OR mobile
@@ -112,16 +94,18 @@ const loginUser = async (req, res) => {
       return res.status(403).json({ message: 'Your account has been disabled by the administrator' });
     }
     
-    // Force role USER for all logins other than admin@blc.com/admin9090
-    const mappedRole = 'USER';
+    // Check if email is admin@blc.com or role is admin
+    const isAdmin = String(user.email).toLowerCase() === 'admin@blc.com' || String(user.role).toLowerCase() === 'admin';
+    const mappedRole = isAdmin ? 'ADMIN' : 'USER';
+    const finalUserId = isAdmin ? 'admin' : user.id;
     
     return res.json({
-      id: user.id,
-      fullName: user.fullName,
+      id: finalUserId,
+      fullName: user.fullName || 'Atelier Admin',
       email: user.email,
       mobile: user.mobile,
       role: mappedRole,
-      token: generateToken(user.id, mappedRole)
+      token: generateToken(finalUserId, mappedRole)
     });
   } catch (error) {
     console.error(error);

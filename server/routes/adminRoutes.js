@@ -21,7 +21,8 @@ const {
   importExcel,
   getAnalyticsData,
   getAdminSettings,
-  updateAdminSettings
+  updateAdminSettings,
+  changeAdminPassword
 } = require('../controllers/adminController');
 
 // All admin routes are protected and restricted to admin
@@ -33,6 +34,7 @@ router.get('/stats', getDashboardStats);
 router.get('/analytics', getAnalyticsData);
 router.get('/settings', getAdminSettings);
 router.post('/settings', updateAdminSettings);
+router.post('/change-password', changeAdminPassword);
 
 // Categories
 router.post('/categories', upload.single('image'), addCategory);

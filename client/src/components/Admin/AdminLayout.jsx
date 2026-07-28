@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, ShoppingBag, FolderTree, FileSpreadsheet, Users, Mail, ArrowLeft, Image } from 'lucide-react';
+import { LayoutDashboard, ShoppingBag, FolderTree, FileSpreadsheet, Users, Mail, ArrowLeft, Image, Lock } from 'lucide-react';
 
 const AdminLayout = ({ children }) => {
   const location = useLocation();
@@ -11,7 +11,8 @@ const AdminLayout = ({ children }) => {
     { name: 'Categories', path: '/admin/categories', icon: FolderTree },
     { name: 'Order Logs', path: '/admin/orders', icon: FileSpreadsheet },
     { name: 'User Registry', path: '/admin/users', icon: Users },
-    { name: 'Banner Upload', path: '/admin/banner', icon: Image }
+    { name: 'Banner Upload', path: '/admin/banner', icon: Image },
+    { name: 'Change Password', path: '/admin/change-password', icon: Lock }
   ];
 
   return (

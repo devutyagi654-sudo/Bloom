@@ -222,6 +222,23 @@ function seedDatabase() {
       writeTableData('products.xlsx', defaultProductsConverted);
       console.log('Seeded products database (in INR).');
     }
+
+    // Seed Admin User
+    const users = getTableData('users.xlsx');
+    const adminExists = users.some(u => String(u.email).toLowerCase() === 'admin@blc.com');
+    if (!adminExists) {
+      const bcrypt = require('bcryptjs');
+      const salt = bcrypt.genSaltSync(10);
+      const hashedPassword = bcrypt.hashSync('admin9090', salt);
+      insertRow('users.xlsx', {
+        fullName: 'Atelier Admin',
+        email: 'admin@blc.com',
+        mobile: '9999999999',
+        password: hashedPassword,
+        role: 'admin'
+      });
+      console.log('Seeded admin user in database.');
+    }
   } catch (error) {
     console.error('Error seeding database:', error);
   }

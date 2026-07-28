@@ -30,6 +30,7 @@ import ManageCategories from './pages/Admin/ManageCategories';
 import ManageOrders from './pages/Admin/ManageOrders';
 import ManageUsers from './pages/Admin/ManageUsers';
 import BannerUpload from './pages/Admin/BannerUpload';
+import ChangePassword from './pages/Admin/ChangePassword';
 
 function App() {
   const dispatch = useDispatch();
@@ -124,6 +125,11 @@ function App() {
             <Route path="/admin/banner" element={
               <ProtectedRoute adminOnly={true}>
                 <BannerUpload />
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/change-password" element={
+              <ProtectedRoute adminOnly={true}>
+                <ChangePassword />
               </ProtectedRoute>
             } />
 

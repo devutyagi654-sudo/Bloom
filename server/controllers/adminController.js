@@ -3,6 +3,7 @@ const fs = require('fs');
 const xlsx = require('xlsx');
 const { getTableData, insertRow, updateRow, deleteRow, writeTableData } = require('../config/db');
 const { uploadToCloudinary } = require('../config/cloudinary');
+const bcrypt = require('bcryptjs');
 
 // --- ANALYTICS ---
 const getDashboardStats = async (req, res) => {
@@ -712,6 +713,43 @@ const getAnalyticsData = async (req, res) => {
   }
 };
 
+const changeAdminPassword = async (req, res) => {
+  try {
+    const { currentPassword, newPassword, confirmNewPassword } = req.body;
+    
+    if (!currentPassword || !newPassword || !confirmNewPassword) {
+      return res.status(400).json({ message: 'Please fill in all password fields' });
+    }
+    
+    if (newPassword !== confirmNewPassword) {
+      return res.status(400).json({ message: 'New passwords do not match' });
+    }
+    
+    const users = getTableData('users.xlsx');
+    // Find the admin user by email admin@blc.com
+    const adminUser = users.find(u => String(u.email).toLowerCase() === 'admin@blc.com');
+    
+    if (!adminUser) {
+      return res.status(404).json({ message: 'Admin account not found in database' });
+    }
+    
+    const isMatch = await bcrypt.compare(currentPassword, adminUser.password);
+    if (!isMatch) {
+      return res.status(400).json({ message: 'Current password is incorrect' });
+    }
+    
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(newPassword, salt);
+    
+    updateRow('users.xlsx', adminUser.id, { password: hashedPassword });
+    
+    return res.json({ message: 'Admin password changed successfully' });
+  } catch (error) {
+    console.error('Error changing admin password:', error);
+    return res.status(500).json({ message: 'Server error changing password' });
+  }
+};
+
 module.exports = {
   getDashboardStats,
   addCategory,
@@ -730,5 +768,6 @@ module.exports = {
   importExcel,
   getAnalyticsData,
   getAdminSettings,
-  updateAdminSettings
+  updateAdminSettings,
+  changeAdminPassword
 };
