@@ -4,7 +4,21 @@ const { getTableData, updateRow } = require('../config/db');
 const getProducts = async (req, res) => {
   try {
     const products = getTableData('products.xlsx');
-    let filteredProducts = [...products];
+    let filteredProducts = products.map(p => {
+      let parsedImages = [];
+      if (p.images) {
+        if (typeof p.images === 'string') {
+          try {
+            parsedImages = JSON.parse(p.images);
+          } catch (e) {
+            parsedImages = [p.images];
+          }
+        } else if (Array.isArray(p.images)) {
+          parsedImages = p.images;
+        }
+      }
+      return { ...p, images: parsedImages };
+    });
 
     // Search query
     if (req.query.search) {
@@ -88,7 +102,21 @@ const getProductById = async (req, res) => {
       return res.status(404).json({ message: 'Product not found' });
     }
     
-    return res.json(product);
+    let parsedImages = [];
+    if (product.images) {
+      if (typeof product.images === 'string') {
+        try {
+          parsedImages = JSON.parse(product.images);
+        } catch (e) {
+          parsedImages = [product.images];
+        }
+      } else if (Array.isArray(product.images)) {
+        parsedImages = product.images;
+      }
+    }
+    
+    const formattedProduct = { ...product, images: parsedImages };
+    return res.json(formattedProduct);
   } catch (error) {
     console.error(error);
     return res.status(500).json({ message: 'Server error fetching product details' });

@@ -115,7 +115,7 @@ const addCategory = async (req, res) => {
     
     if (req.file) {
       const cloudinaryUrl = await uploadToCloudinary(req.file.path, 'categories');
-      image = cloudinaryUrl || `/uploads/${req.file.filename}`;
+      image = cloudinaryUrl || `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
     }
     
     if (!name) {
@@ -164,7 +164,7 @@ const updateCategory = async (req, res) => {
         if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
       }
       const cloudinaryUrl = await uploadToCloudinary(req.file.path, 'categories');
-      updatedFields.image = cloudinaryUrl || `/uploads/${req.file.filename}`;
+      updatedFields.image = cloudinaryUrl || `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
     }
     
     const updated = updateRow('categories.xlsx', id, updatedFields);
@@ -212,10 +212,11 @@ const addProduct = async (req, res) => {
     
     // Extract image paths
     let images = [];
+    const host = `${req.protocol}://${req.get('host')}`;
     if (req.files && req.files.length > 0) {
       for (const file of req.files) {
         const cloudinaryUrl = await uploadToCloudinary(file.path, 'products');
-        images.push(cloudinaryUrl || `/uploads/${file.filename}`);
+        images.push(cloudinaryUrl || `${host}/uploads/${file.filename}`);
       }
     }
     
@@ -272,10 +273,11 @@ const updateProduct = async (req, res) => {
     
     // New uploaded files
     let newImages = [];
+    const host = `${req.protocol}://${req.get('host')}`;
     if (req.files && req.files.length > 0) {
       for (const file of req.files) {
         const cloudinaryUrl = await uploadToCloudinary(file.path, 'products');
-        newImages.push(cloudinaryUrl || `/uploads/${file.filename}`);
+        newImages.push(cloudinaryUrl || `${host}/uploads/${file.filename}`);
       }
     }
     

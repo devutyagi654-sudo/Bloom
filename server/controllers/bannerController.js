@@ -44,10 +44,11 @@ const uploadBanner = async (req, res) => {
       });
     }
 
+    const host = `${req.protocol}://${req.get('host')}`;
     for (const file of req.files) {
       const filename = file.filename;
       const cloudinaryUrl = await uploadToCloudinary(file.path, 'banners');
-      const bannerPath = cloudinaryUrl || `/uploads/banners/${filename}`;
+      const bannerPath = cloudinaryUrl || `${host}/uploads/banners/${filename}`;
       
       insertRow('banners.xlsx', {
         filename,
