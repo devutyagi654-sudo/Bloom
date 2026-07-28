@@ -59,7 +59,15 @@ const Cart = () => {
   // Image URL helper
   const getFullUrl = (path) => {
     if (!path) return '';
-    return path.startsWith('http') ? path : `${import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api', '') : 'http://localhost:5000'}${path}`;
+    let cleanPath = path;
+    if (typeof path === 'string' && path.startsWith('"') && path.endsWith('"')) {
+      try {
+        cleanPath = JSON.parse(path);
+      } catch (e) {
+        // keep as is
+      }
+    }
+    return cleanPath.startsWith('http') ? cleanPath : `${import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api', '') : 'http://localhost:5000'}${cleanPath}`;
   };
 
   return (
@@ -105,7 +113,19 @@ const Cart = () => {
                 <AnimatePresence>
                   {items.map((item) => {
                     const price = item.product.discountPrice || item.product.price;
-                    const images = Array.isArray(item.product.images) ? item.product.images : [item.product.images].filter(Boolean);
+                    let images = [];
+                    if (item.product.images) {
+                      if (typeof item.product.images === 'string') {
+                        try {
+                          images = JSON.parse(item.product.images);
+                        } catch (e) {
+                          images = [item.product.images];
+                        }
+                      } else if (Array.isArray(item.product.images)) {
+                        images = item.product.images;
+                      }
+                    }
+                    images = images.filter(Boolean);
                     const itemImage = images.length > 0 ? getFullUrl(images[0]) : '';
                     
                     return (

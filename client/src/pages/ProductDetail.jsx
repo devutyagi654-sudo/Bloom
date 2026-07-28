@@ -108,7 +108,21 @@ const ProductDetail = () => {
   const saving = discountPrice ? Math.round(((price - discountPrice) / price) * 100) : 0;
   
   // Parse images if array or fallback to single image
-  const productImages = Array.isArray(product.images) ? product.images : [product.images].filter(Boolean);
+  let productImages = [];
+  if (product.images) {
+    if (typeof product.images === 'string') {
+      try {
+        productImages = JSON.parse(product.images);
+      } catch (e) {
+        productImages = [product.images];
+      }
+    } else if (Array.isArray(product.images)) {
+      productImages = product.images;
+    } else {
+      productImages = [product.images];
+    }
+  }
+  productImages = productImages.filter(Boolean);
 
   return (
     <div className="bg-white dark:bg-black text-neutral-800 dark:text-neutral-200 transition-colors duration-300 py-16">

@@ -15,7 +15,15 @@ const ImageZoom = ({ images }) => {
   // Helper to resolve backend image paths vs absolute URLs
   const getFullUrl = (path) => {
     if (!path) return '';
-    return path.startsWith('http') ? path : `${import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api', '') : 'http://localhost:5000'}${path}`;
+    let cleanPath = path;
+    if (typeof path === 'string' && path.startsWith('"') && path.endsWith('"')) {
+      try {
+        cleanPath = JSON.parse(path);
+      } catch (e) {
+        // keep as is
+      }
+    }
+    return cleanPath.startsWith('http') ? cleanPath : `${import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api', '') : 'http://localhost:5000'}${cleanPath}`;
   };
 
   const handleMouseMove = (e) => {
