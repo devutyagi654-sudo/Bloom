@@ -3,7 +3,7 @@ import { useSelector } from 'react-redux';
 import axios from 'axios';
 import API_URL from '../../apiConfig';
 import AdminLayout from '../../components/Admin/AdminLayout';
-import { DollarSign, FileSpreadsheet, Package, Users, Mail, AlertTriangle, ArrowRight, Download, Upload, Clock, CheckCircle } from 'lucide-react';
+import { DollarSign, FileSpreadsheet, Package, Users, Mail, AlertTriangle, ArrowRight, Clock, CheckCircle } from 'lucide-react';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   BarChart, Bar, Cell, Legend, PieChart, Pie
@@ -23,12 +23,6 @@ const Dashboard = () => {
   // Analytics states
   const [analytics, setAnalytics] = useState(null);
   const [analyticsLoading, setAnalyticsLoading] = useState(true);
-
-  // Import/Export States
-  const [activeTable, setActiveTable] = useState('products');
-  const [importFile, setImportFile] = useState(null);
-  const [importMessage, setImportMessage] = useState({ type: '', text: '' });
-  const [importLoading, setImportLoading] = useState(false);
 
   const fetchStats = async () => {
     try {
@@ -67,62 +61,6 @@ const Dashboard = () => {
     }
   }, [activeTab, token]);
 
-  // Export Sheet Handler
-  const handleExport = async (tableName) => {
-    try {
-      const res = await axios.get(`${API_URL}/admin/export/${tableName}`, {
-        headers: { Authorization: `Bearer ${token}` },
-        responseType: 'blob'
-      });
-      
-      const blob = new Blob([res.data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-      const link = document.createElement('a');
-      link.href = window.URL.createObjectURL(blob);
-      link.download = `${tableName}.xlsx`;
-      link.click();
-    } catch (err) {
-      alert('Failed to export sheet database');
-    }
-  };
-
-  // Import Sheet Handler
-  const handleImport = async (e) => {
-    e.preventDefault();
-    if (!importFile) return;
-
-    setImportLoading(true);
-    setImportMessage({ type: '', text: '' });
-
-    const formData = new FormData();
-    formData.append('file', importFile);
-
-    try {
-      const res = await axios.post(
-        `${API_URL}/admin/import/${activeTable}`,
-        formData,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'multipart/form-data'
-          }
-        }
-      );
-      setImportMessage({ type: 'success', text: res.data.message });
-      setImportFile(null);
-      // Reset input element
-      document.getElementById('import-file-input').value = '';
-      // Refetch stats
-      fetchStats();
-    } catch (err) {
-      setImportMessage({
-        type: 'error',
-        text: err.response?.data?.message || 'Import failed. Check columns format.'
-      });
-    } finally {
-      setImportLoading(false);
-    }
-  };
-
   if (loading) {
     return (
       <AdminLayout>
@@ -138,7 +76,7 @@ const Dashboard = () => {
     { name: "Today's Revenue", value: `₹${stats?.todayRevenue?.toLocaleString() || 0}`, icon: DollarSign, color: 'text-emerald-500' },
     { name: 'Total Orders', value: stats?.ordersCount || 0, icon: FileSpreadsheet, color: 'text-blue-500' },
     { name: "Today's Orders", value: stats?.todayOrdersCount || 0, icon: FileSpreadsheet, color: 'text-sky-500' },
-    { name: 'Pending Orders', value: stats?.pendingOrdersCount || 0, icon: Clock, color: 'text-amber-505' },
+    { name: 'Pending Orders', value: stats?.pendingOrdersCount || 0, icon: Clock, color: 'text-amber-500' },
     { name: 'Delivered Orders', value: stats?.deliveredOrdersCount || 0, icon: CheckCircle, color: 'text-green-600' },
     { name: 'Cancelled Orders', value: stats?.cancelledOrdersCount || 0, icon: AlertTriangle, color: 'text-red-500' },
     { name: 'Registered Customers', value: stats?.customersCount || 0, icon: Users, color: 'text-purple-500' }
@@ -154,7 +92,7 @@ const Dashboard = () => {
             <h1 className="font-playfair text-3xl font-bold tracking-wide text-neutral-900 dark:text-white">
               Dashboard Analytics
             </h1>
-            <p className="text-neutral-400 text-xs mt-1 uppercase tracking-widest font-semibold">Realtime statistics aggregated from Excel database</p>
+            <p className="text-neutral-400 text-xs mt-1 uppercase tracking-widest font-semibold">Realtime statistics & metrics overview</p>
           </div>
 
           <div className="flex border border-neutral-200 dark:border-neutral-900 rounded-lg overflow-hidden text-[10px] font-bold uppercase tracking-widest bg-neutral-50 dark:bg-neutral-950">
@@ -166,7 +104,7 @@ const Dashboard = () => {
                   : 'text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-200'
               }`}
             >
-              Sheets Database
+              Overview
             </button>
             <button
               onClick={() => setActiveTab('analytics')}
@@ -183,7 +121,7 @@ const Dashboard = () => {
 
         {/* Low Stock Warning Alert */}
         {stats?.lowStockProducts && stats.lowStockProducts.length > 0 && (
-          <div className="bg-red-550/10 border border-red-500/20 p-4 rounded-xl text-xs space-y-2">
+          <div className="bg-red-500/10 border border-red-500/20 p-4 rounded-xl text-xs space-y-2">
             <span className="flex items-center text-red-500 font-bold uppercase tracking-wider text-[10px]">
               <AlertTriangle className="w-4 h-4 mr-1.5 animate-pulse" />
               INVENTORY ALERT: Low Stock Warnings
@@ -222,91 +160,6 @@ const Dashboard = () => {
 
         {activeTab === 'overview' ? (
           <div className="space-y-8">
-            {/* Database Export/Import Tools */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              
-              {/* Export Widget */}
-              <div className="bg-white dark:bg-neutral-950 p-6 rounded-xl border border-neutral-200/60 dark:border-neutral-900 space-y-6">
-                <div>
-                  <h3 className="font-playfair text-lg font-bold text-neutral-800 dark:text-white tracking-wide">
-                    Export Excel Databases
-                  </h3>
-                  <p className="text-neutral-400 text-xs mt-1">Download raw spreadsheet sheets to backup or analyze offline</p>
-                </div>
-                
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                  {['users', 'products', 'categories', 'orders', 'newsletter', 'contacts'].map((table) => (
-                    <button
-                      key={table}
-                      onClick={() => handleExport(table)}
-                      className="flex items-center justify-center space-x-2 py-3 border border-neutral-200 dark:border-neutral-800 text-neutral-600 dark:text-neutral-400 rounded hover:border-luxury-gold-500 hover:text-luxury-gold-500 font-bold text-xs uppercase tracking-widest transition-colors"
-                    >
-                      <Download className="w-3.5 h-3.5" />
-                      <span>{table}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Import Widget */}
-              <div className="bg-white dark:bg-neutral-950 p-6 rounded-xl border border-neutral-200/60 dark:border-neutral-900 space-y-6">
-                <div>
-                  <h3 className="font-playfair text-lg font-bold text-neutral-800 dark:text-white tracking-wide">
-                    Import Excel Update
-                  </h3>
-                  <p className="text-neutral-400 text-xs mt-1">Select table and upload formatted .xlsx spreadsheet to overwrite rows</p>
-                </div>
-
-                <form onSubmit={handleImport} className="space-y-4">
-                  <div className="flex space-x-4">
-                    <div className="w-1/2">
-                      <label className="block text-[9px] font-bold uppercase tracking-widest text-neutral-400 mb-1">Target Table</label>
-                      <select
-                        value={activeTable}
-                        onChange={(e) => setActiveTable(e.target.value)}
-                        className="w-full text-xs py-2 px-3 bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-850 rounded focus:outline-none"
-                      >
-                        <option value="products">Products</option>
-                        <option value="categories">Categories</option>
-                        <option value="users">Users</option>
-                        <option value="orders">Orders</option>
-                        <option value="newsletter">Newsletter</option>
-                      </select>
-                    </div>
-                    <div className="w-1/2">
-                      <label className="block text-[9px] font-bold uppercase tracking-widest text-neutral-400 mb-1">Spreadsheet File</label>
-                      <input
-                        id="import-file-input"
-                        type="file"
-                        accept=".xlsx"
-                        required
-                        onChange={(e) => setImportFile(e.target.files[0])}
-                        className="w-full text-xs text-neutral-400 file:mr-2 file:py-1.5 file:px-3 file:rounded file:border-0 file:bg-neutral-200 dark:file:bg-neutral-800 file:text-xs file:font-semibold hover:file:opacity-80"
-                      />
-                    </div>
-                  </div>
-
-                  {importMessage.text && (
-                    <p className={`text-xs font-semibold ${
-                      importMessage.type === 'success' ? 'text-green-500' : 'text-red-500'
-                    }`}>
-                      {importMessage.text}
-                    </p>
-                  )}
-
-                  <button
-                    type="submit"
-                    disabled={importLoading || !importFile}
-                    className="w-full flex items-center justify-center space-x-2 bg-black dark:bg-white text-white dark:text-black py-3 rounded font-bold text-xs tracking-widest uppercase transition-colors disabled:opacity-50"
-                  >
-                    <Upload className="w-4 h-4" />
-                    <span>{importLoading ? 'Importing sheets...' : 'Upload & Overwrite'}</span>
-                  </button>
-                </form>
-              </div>
-
-            </div>
-
             {/* Recent Orders table */}
             <div className="bg-white dark:bg-neutral-950 p-6 rounded-xl border border-neutral-200/60 dark:border-neutral-900 space-y-4">
               <h3 className="font-playfair text-lg font-bold text-neutral-800 dark:text-white tracking-wide">

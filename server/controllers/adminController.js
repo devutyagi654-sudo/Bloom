@@ -550,33 +550,6 @@ const toggleUserStatus = async (req, res) => {
   }
 };
 
-// --- DATA EXPORT & IMPORT ---
-const exportExcel = async (req, res) => {
-  try {
-    const { tableName } = req.params;
-    let data = [];
-    
-    if (tableName === 'users') data = await User.find().select('-password').lean();
-    else if (tableName === 'products') data = await Product.find().lean();
-    else if (tableName === 'categories') data = await Category.find().lean();
-    else if (tableName === 'orders') data = await Order.find().lean();
-    else if (tableName === 'contacts') data = await Contact.find().lean();
-    else if (tableName === 'newsletter') data = await Newsletter.find().lean();
-    else return res.status(400).json({ message: 'Invalid table name' });
-
-    res.setHeader('Content-Type', 'application/json');
-    res.setHeader('Content-Disposition', `attachment; filename=${tableName}.json`);
-    return res.send(JSON.stringify(data, null, 2));
-  } catch (error) {
-    console.error(error);
-    return res.status(500).json({ message: 'Server error exporting database' });
-  }
-};
-
-const importExcel = async (req, res) => {
-  return res.json({ message: 'Import operation disabled in MongoDB Atlas mode.' });
-};
-
 const getAnalyticsData = async (req, res) => {
   try {
     const orders = await Order.find().lean();
@@ -728,8 +701,6 @@ module.exports = {
   updateUserRole,
   deleteUser,
   toggleUserStatus,
-  exportExcel,
-  importExcel,
   getAnalyticsData,
   getAdminSettings,
   updateAdminSettings,

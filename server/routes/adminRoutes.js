@@ -17,8 +17,6 @@ const {
   updateUserRole,
   deleteUser,
   toggleUserStatus,
-  exportExcel,
-  importExcel,
   getAnalyticsData,
   getAdminSettings,
   updateAdminSettings,
@@ -56,10 +54,6 @@ router.put('/users/:id/role', updateUserRole);
 router.put('/users/:id/status', toggleUserStatus);
 router.delete('/users/:id', deleteUser);
 
-// Database import/export
-router.get('/export/:tableName', exportExcel);
-router.post('/import/:tableName', upload.single('file'), importExcel);
-
 const uploadBannersMiddleware = (req, res, next) => {
   bannerUpload.fields([
     { name: 'banners', maxCount: 5 },
@@ -74,7 +68,6 @@ const uploadBannersMiddleware = (req, res, next) => {
       });
     }
 
-    // Consolidate files from both fieldnames into req.files
     const files = [];
     if (req.files) {
       if (req.files['banners']) files.push(...req.files['banners']);
