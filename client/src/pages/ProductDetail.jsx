@@ -26,19 +26,26 @@ const ProductDetail = () => {
   // Related Products
   const [related, setRelated] = useState([]);
   
-  // Quantity State
+  // Quantity State & Size Selection State
   const [quantity, setQuantity] = useState(1);
+  const [selectedSize, setSelectedSize] = useState('');
   const [cartSuccess, setCartSuccess] = useState('');
+
+  const isBanglesCategory = (prod) => {
+    if (!prod) return false;
+    const cat = String(prod.category || '').toLowerCase().trim();
+    const name = String(prod.name || '').toLowerCase();
+    return cat.includes('bangle') || cat.includes('bracelet') || name.includes('bangle') || name.includes('bracelet');
+  };
 
   const fetchProductDetails = async () => {
     setLoading(true);
     setError('');
     try {
-      // 1. Fetch details
       const res = await axios.get(`${API_URL}/products/${id}`);
       setProduct(res.data);
+      setSelectedSize('');
       
-      // 2. Fetch related products (same category)
       const relRes = await axios.get(`${API_URL}/products?category=${encodeURIComponent(res.data.category)}`);
       const filteredRelated = relRes.data.filter(p => String(p.id) !== String(res.data.id)).slice(0, 4);
       setRelated(filteredRelated);
@@ -51,7 +58,6 @@ const ProductDetail = () => {
 
   useEffect(() => {
     fetchProductDetails();
-    // Scroll to top on load
     window.scrollTo(0, 0);
   }, [id]);
 
@@ -70,10 +76,15 @@ const ProductDetail = () => {
       return;
     }
     if (!product || Number(product.stock) <= 0) return;
+
+    if (isBanglesCategory(product) && !selectedSize) {
+      setCartSuccess('Please select a bangle size.');
+      return;
+    }
     
     setCartSuccess('');
     try {
-      await dispatch(addToCart({ productId: id, quantity })).unwrap();
+      await dispatch(addToCart({ productId: id, quantity, selectedSize })).unwrap();
       dispatch(fetchCart());
       setCartSuccess('Added to cart successfully!');
       setTimeout(() => setCartSuccess(''), 3000);
@@ -107,7 +118,6 @@ const ProductDetail = () => {
   const discountPrice = product.discountPrice ? Number(product.discountPrice) : null;
   const saving = discountPrice ? Math.round(((price - discountPrice) / price) * 100) : 0;
   
-  // Parse images if array or fallback to single image
   let productImages = [];
   if (product.images) {
     if (typeof product.images === 'string') {
@@ -123,6 +133,8 @@ const ProductDetail = () => {
     }
   }
   productImages = productImages.filter(Boolean);
+
+  const isBangles = isBanglesCategory(product);
 
   return (
     <div className="bg-white dark:bg-black text-neutral-800 dark:text-neutral-200 transition-colors duration-300 py-16">
@@ -218,6 +230,45 @@ const ProductDetail = () => {
               {product.description || 'This beautifully designed luxury piece encapsulates the pure minimalism and sophisticated styling characteristics of bloomluxecollection. Handcrafted from top-grade metals and precious gems.'}
             </p>
 
+            {/* Size selection section for Bangles */}
+            {isBangles && (
+              <div className="space-y-3 pt-3 border-t border-neutral-100 dark:border-neutral-900">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold uppercase tracking-widest text-neutral-800 dark:text-neutral-200">
+                    Select Size <span className="text-red-500">*</span>
+                  </label>
+                  {selectedSize ? (
+                    <span className="text-xs font-bold text-luxury-gold-600 dark:text-luxury-gold-400 uppercase tracking-wider">
+                      Size: {selectedSize}
+                    </span>
+                  ) : (
+                    <span className="text-[10px] text-neutral-400 uppercase tracking-widest font-semibold">
+                      Required
+                    </span>
+                  )}
+                </div>
+                <div className="flex flex-wrap gap-3">
+                  {['2.2', '2.4', '2.6', '2.8'].map((size) => (
+                    <button
+                      key={size}
+                      type="button"
+                      onClick={() => {
+                        setSelectedSize(size);
+                        setCartSuccess('');
+                      }}
+                      className={`px-5 py-2.5 text-xs font-bold rounded-xl border transition-all duration-200 ${
+                        selectedSize === size
+                          ? 'bg-luxury-gold-500 text-black border-luxury-gold-500 shadow-md font-extrabold scale-105'
+                          : 'bg-neutral-50 dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800 text-neutral-800 dark:text-neutral-200 hover:border-luxury-gold-500/50'
+                      }`}
+                    >
+                      {size}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Trust highlights banner */}
             <div className="bg-neutral-50 dark:bg-neutral-950 p-4 rounded-xl border border-neutral-100 dark:border-neutral-900 grid grid-cols-3 gap-4 text-center">
               <div className="flex flex-col items-center space-y-1">
@@ -236,10 +287,10 @@ const ProductDetail = () => {
 
             {/* Add to cart / quantity selector controls */}
             {Number(product.stock) > 0 && (
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center space-y-4 sm:space-y-0 sm:space-x-4 pt-4">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center space-y-4 sm:space-y-0 sm:space-x-4 pt-2">
                 
                 {/* Quantity selection */}
-                <div className="flex border border-neutral-300 dark:border-neutral-800 rounded bg-white dark:bg-neutral-900 overflow-hidden self-start">
+                <div className="flex border border-neutral-300 dark:border-neutral-800 rounded-xl bg-white dark:bg-neutral-900 overflow-hidden self-start">
                   <button
                     onClick={() => setQuantity(q => Math.max(1, q - 1))}
                     className="px-4 py-2.5 text-lg font-bold hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
@@ -260,7 +311,7 @@ const ProductDetail = () => {
                 {/* Add to Cart button */}
                 <button
                   onClick={handleAddToCart}
-                  className="flex-grow flex items-center justify-center space-x-2 bg-gradient-to-r from-luxury-gold-600 to-luxury-gold-500 hover:from-luxury-gold-500 hover:to-luxury-gold-400 text-black font-semibold text-xs tracking-widest uppercase py-3.5 px-8 rounded shadow-lg transition-all"
+                  className="flex-grow flex items-center justify-center space-x-2 bg-gradient-to-r from-luxury-gold-600 to-luxury-gold-500 hover:from-luxury-gold-500 hover:to-luxury-gold-400 text-black font-semibold text-xs tracking-widest uppercase py-3.5 px-8 rounded-xl shadow-lg transition-all"
                 >
                   <ShoppingCart className="w-4 h-4" />
                   <span>Add to Cart</span>
@@ -269,7 +320,7 @@ const ProductDetail = () => {
                 {/* Wishlist toggle */}
                 <button
                   onClick={handleWishlistToggle}
-                  className="p-3.5 border border-neutral-300 dark:border-neutral-800 rounded hover:bg-neutral-100 dark:hover:bg-neutral-900 transition-colors text-neutral-700 dark:text-neutral-300"
+                  className="p-3.5 border border-neutral-300 dark:border-neutral-800 rounded-xl hover:bg-neutral-100 dark:hover:bg-neutral-900 transition-colors text-neutral-700 dark:text-neutral-300"
                 >
                   <Heart className={`w-5 h-5 ${inWishlist ? 'fill-red-600 text-red-600' : ''}`} />
                 </button>
@@ -279,7 +330,7 @@ const ProductDetail = () => {
 
             {cartSuccess && (
               <p className={`text-sm font-semibold mt-2 ${
-                cartSuccess.includes('success') ? 'text-green-500' : 'text-red-500'
+                cartSuccess.includes('successfully') ? 'text-green-500' : 'text-red-500'
               }`}>
                 {cartSuccess}
               </p>

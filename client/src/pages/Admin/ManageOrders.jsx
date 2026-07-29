@@ -481,7 +481,14 @@ const ManageOrders = () => {
                   <span className="font-bold text-neutral-400 uppercase tracking-widest text-[9px] block mb-2">Itemizations</span>
                   {selectedOrder.items && selectedOrder.items.map((item, i) => (
                     <div key={i} className="flex justify-between items-center text-xs">
-                      <span className="text-neutral-500 font-medium">{item.name} (x{item.quantity})</span>
+                      <div>
+                        <span className="text-neutral-500 font-medium block">{item.name} (x{item.quantity})</span>
+                        {item.selectedSize && (
+                          <span className="text-[10px] text-luxury-gold-600 dark:text-luxury-gold-400 font-bold block">
+                            Size: {item.selectedSize}
+                          </span>
+                        )}
+                      </div>
                       <span className="font-semibold">{formatDirectPrice(item.price * item.quantity)}</span>
                     </div>
                   ))}

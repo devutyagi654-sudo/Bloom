@@ -3,7 +3,7 @@ import axios from 'axios';
 import API_URL from '../apiConfig';
 
 const initialState = {
-  items: [], // [{ id, productId, quantity, product }]
+  items: [], // [{ id, productId, quantity, selectedSize, product }]
   loading: false,
   error: null
 };
@@ -23,10 +23,10 @@ export const fetchCart = createAsyncThunk('cart/fetch', async (_, { getState, re
   }
 });
 
-export const addToCart = createAsyncThunk('cart/add', async ({ productId, quantity }, { getState, rejectWithValue }) => {
+export const addToCart = createAsyncThunk('cart/add', async ({ productId, quantity, selectedSize }, { getState, rejectWithValue }) => {
   try {
-    const res = await axios.post(`${API_URL}/cart`, { productId, quantity }, getHeaders(getState));
-    return res.data; // Note: returns raw cart row, we usually re-fetch cart to populate product details
+    const res = await axios.post(`${API_URL}/cart`, { productId, quantity, selectedSize }, getHeaders(getState));
+    return res.data;
   } catch (err) {
     return rejectWithValue(err.response?.data?.message || 'Failed to add to cart');
   }
@@ -82,8 +82,6 @@ const cartSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       })
-      // Add, update, remove are usually followed by dispatching fetchCart from the UI
-      // to keep items fully populated and synced, but let's handle updates here where possible
       .addCase(updateCartQuantity.fulfilled, (state, action) => {
         const item = state.items.find(i => String(i.id) === String(action.payload.id));
         if (item) {

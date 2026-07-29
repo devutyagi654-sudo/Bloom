@@ -162,7 +162,8 @@ const verifyPayment = async (req, res) => {
         name: product.name,
         price: itemPrice,
         quantity: qty,
-        image: imagesArr.length > 0 ? imagesArr[0] : ''
+        image: imagesArr.length > 0 ? imagesArr[0] : '',
+        selectedSize: item.selectedSize || ''
       });
     }
 

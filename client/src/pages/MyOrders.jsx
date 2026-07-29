@@ -120,9 +120,16 @@ const MyOrders = () => {
                             className="w-10 h-12 object-cover rounded bg-neutral-200"
                           />
                         )}
-                        <span className="text-neutral-700 dark:text-neutral-300 font-medium">
-                          {item.name} <span className="font-bold text-[10px] text-neutral-400">x{item.quantity}</span>
-                        </span>
+                        <div>
+                          <span className="text-neutral-700 dark:text-neutral-300 font-medium block">
+                            {item.name} <span className="font-bold text-[10px] text-neutral-400">x{item.quantity}</span>
+                          </span>
+                          {item.selectedSize && (
+                            <span className="text-[10px] font-bold text-luxury-gold-600 dark:text-luxury-gold-400 block">
+                              Size: {item.selectedSize}
+                            </span>
+                          )}
+                        </div>
                       </div>
                       <span className="font-semibold text-neutral-800 dark:text-neutral-200">{formatDirectPrice(item.price * item.quantity)}</span>
                     </div>

@@ -2,6 +2,14 @@ const Cart = require('../models/Cart');
 const Product = require('../models/Product');
 const mongoose = require('mongoose');
 
+// Helper to identify Bangles / Bracelet products
+const isBanglesCategory = (product) => {
+  if (!product) return false;
+  const cat = String(product.category || '').toLowerCase().trim();
+  const name = String(product.name || '').toLowerCase();
+  return cat.includes('bangle') || cat.includes('bracelet') || name.includes('bangle') || name.includes('bracelet');
+};
+
 // Get user cart items
 const getCart = async (req, res) => {
   try {
@@ -25,6 +33,7 @@ const getCart = async (req, res) => {
         _id: item._id,
         productId: item.productId,
         quantity: Number(item.quantity),
+        selectedSize: item.selectedSize || '',
         createdAt: item.createdAt,
         product: {
           id: product._id,
@@ -52,7 +61,7 @@ const getCart = async (req, res) => {
 // Add product to cart
 const addToCart = async (req, res) => {
   try {
-    const { productId, quantity } = req.body;
+    const { productId, quantity, selectedSize } = req.body;
     const qty = Number(quantity) || 1;
     
     if (!productId) {
@@ -74,9 +83,16 @@ const addToCart = async (req, res) => {
     if (Number(product.stock) <= 0) {
       return res.status(400).json({ message: 'Product is out of stock' });
     }
+
+    // Validate size selection for Bangles category
+    if (isBanglesCategory(product) && (!selectedSize || !String(selectedSize).trim())) {
+      return res.status(400).json({ message: 'Please select a bangle size.' });
+    }
     
     const userId = req.user.id || req.user._id;
-    let cartItem = await Cart.findOne({ userId, productId });
+    const sizeVal = selectedSize ? String(selectedSize).trim() : '';
+
+    let cartItem = await Cart.findOne({ userId, productId, selectedSize: sizeVal });
     
     if (cartItem) {
       const newQty = cartItem.quantity + qty;
@@ -97,7 +113,8 @@ const addToCart = async (req, res) => {
       const newItem = await Cart.create({
         userId,
         productId,
-        quantity: qty
+        quantity: qty,
+        selectedSize: sizeVal
       });
       const obj = newItem.toObject();
       obj.id = obj._id;

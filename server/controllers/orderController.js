@@ -9,6 +9,14 @@ const Product = require('../models/Product');
 const Cart = require('../models/Cart');
 const OrderStatusHistory = require('../models/OrderStatusHistory');
 
+// Helper to identify Bangles / Bracelet products
+const isBanglesCategory = (product) => {
+  if (!product) return false;
+  const cat = String(product.category || '').toLowerCase().trim();
+  const name = String(product.name || '').toLowerCase();
+  return cat.includes('bangle') || cat.includes('bracelet') || name.includes('bangle') || name.includes('bracelet');
+};
+
 // Initialize Razorpay SDK if keys are configured
 let razorpay = null;
 const isRazorpayConfigured = process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_ID !== 'your_razorpay_key_id' &&
@@ -58,7 +66,9 @@ const sendOrderStatusEmail = async (order, status) => {
 
   const itemDetails = (order.items || []).map(item => 
     `<tr>
-      <td style="padding: 10px; border-bottom: 1px solid #f2e8dc;">${item.name} x ${item.quantity}</td>
+      <td style="padding: 10px; border-bottom: 1px solid #f2e8dc;">
+        ${item.name} x ${item.quantity} ${item.selectedSize ? `<br/><small style="color:#8a502d;">Size: ${item.selectedSize}</small>` : ''}
+      </td>
       <td style="padding: 10px; border-bottom: 1px solid #f2e8dc; text-align: right;">₹${item.price}</td>
     </tr>`
   ).join('');
@@ -76,7 +86,7 @@ const sendOrderStatusEmail = async (order, status) => {
       <div style="background-color: #ffffff; padding: 15px; border-radius: 8px; border: 1px solid #f7efe6; margin: 20px 0;">
         <h3 style="margin-top: 0; border-bottom: 1px solid #f7efe6; padding-bottom: 8px;">Order Details</h3>
         <p style="margin: 5px 0;"><strong>Order Reference:</strong> #BLC-${order._id || order.id}</p>
-        <p style="margin: 5px 0;"><strong>Payment Method:</strong> ${order.paymentMethod} (${order.paymentStatus})</p>
+        <p style="margin: 5px 0;"><strong>Payment Method:</strong> Online Payment (${order.paymentStatus})</p>
         ${order.awbCode ? `<p style="margin: 5px 0;"><strong>AWB Tracking ID:</strong> ${order.awbCode} (${order.courierName})</p>` : ''}
         ${order.trackingUrl ? `<p style="margin: 5px 0;"><a href="${order.trackingUrl}" style="color: #c18055; font-weight: bold;">Track Live on Courier Portal</a></p>` : ''}
       </div>
@@ -181,22 +191,18 @@ const transitionOrderStatus = async (orderId, newStatus, updatedBy = 'System', n
   return updatedOrder;
 };
 
-// Create a new order (Supports Cash on Delivery / COD & Razorpay)
+// Create a new order (Online Payment / Razorpay Checkout)
 const createOrder = async (req, res) => {
   try {
     const {
       fullName, email, mobile, address, city, state, zip,
-      paymentMethod, shippingCharges, couponCode
+      paymentMethod, couponCode
     } = req.body;
     
-    if (!fullName || !email || !mobile || !address || !city || !state || !zip || !paymentMethod) {
-      return res.status(400).json({ message: 'Please provide all shipping and payment details' });
+    if (!fullName || !email || !mobile || !address || !city || !state || !zip) {
+      return res.status(400).json({ message: 'Please provide all shipping and contact details' });
     }
 
-    if (paymentMethod !== 'COD' && paymentMethod !== 'Razorpay') {
-      return res.status(400).json({ message: 'Invalid payment method for direct order endpoint' });
-    }
-    
     const userId = req.user.id || req.user._id;
     const userCart = await Cart.find({ userId });
     
@@ -219,6 +225,11 @@ const createOrder = async (req, res) => {
       if (!product) {
         return res.status(404).json({ message: `Product not found` });
       }
+
+      // Mandatory size check for Bangles category
+      if (isBanglesCategory(product) && (!item.selectedSize || !String(item.selectedSize).trim())) {
+        return res.status(400).json({ message: `Please select a bangle size for item: ${product.name}` });
+      }
       
       const qty = Number(item.quantity);
       if (Number(product.stock) < qty) {
@@ -237,7 +248,8 @@ const createOrder = async (req, res) => {
         name: product.name,
         price: itemPrice,
         quantity: qty,
-        image: imagesArr.length > 0 ? imagesArr[0] : ''
+        image: imagesArr.length > 0 ? imagesArr[0] : '',
+        selectedSize: item.selectedSize || ''
       });
     }
     
@@ -253,8 +265,8 @@ const createOrder = async (req, res) => {
       }
     }
     
-    const deliveryCharge = paymentMethod === 'COD' ? 50 : 0;
-    const totalAmount = subtotal - discount + deliveryCharge;
+    const deliveryCharge = 0;
+    const totalAmount = subtotal - discount;
     
     // Deduct stock in Product documents
     for (const item of userCart) {
@@ -271,62 +283,27 @@ const createOrder = async (req, res) => {
       }
     }
     
-    if (paymentMethod === 'Razorpay') {
-      let rzOrderId = '';
-      let mockMode = true;
-      const amountInPaise = Math.round(Number(totalAmount) * 100);
+    let rzOrderId = '';
+    let mockMode = true;
+    const amountInPaise = Math.round(Number(totalAmount) * 100);
 
-      if (razorpay) {
-        try {
-          const rzOrder = await razorpay.orders.create({
-            amount: amountInPaise,
-            currency: 'INR',
-            receipt: `receipt_draft_${Date.now()}`
-          });
-          rzOrderId = rzOrder.id;
-          mockMode = false;
-        } catch (rzErr) {
-          console.error('Razorpay SDK failed generating order draft:', rzErr.message);
-          rzOrderId = `order_mock_${Math.random().toString(36).substring(2, 11)}`;
-        }
-      } else {
+    if (razorpay) {
+      try {
+        const rzOrder = await razorpay.orders.create({
+          amount: amountInPaise,
+          currency: 'INR',
+          receipt: `receipt_draft_${Date.now()}`
+        });
+        rzOrderId = rzOrder.id;
+        mockMode = false;
+      } catch (rzErr) {
+        console.error('Razorpay SDK failed generating order draft:', rzErr.message);
         rzOrderId = `order_mock_${Math.random().toString(36).substring(2, 11)}`;
       }
-
-      const order = await Order.create({
-        userId,
-        fullName,
-        email: email.toLowerCase(),
-        mobile,
-        address,
-        city,
-        state,
-        zip,
-        paymentMethod: 'Razorpay',
-        paymentStatus: 'Failed',
-        totalAmount: Number(totalAmount.toFixed(2)),
-        shippingCharges: 0,
-        deliveryCharge: 0,
-        couponCode: couponCode || '',
-        items: orderItems,
-        orderStatus: 'Pending',
-        razorpayOrderId: rzOrderId
-      });
-
-      const orderObj = order.toObject();
-      orderObj.id = orderObj._id;
-
-      await logOrderStatusHistory(order._id, '', 'Pending', 'System', 'Order draft created (prepaid payment pending)');
-
-      return res.status(201).json({
-        ...orderObj,
-        mockMode,
-        amount: amountInPaise,
-        currency: 'INR'
-      });
+    } else {
+      rzOrderId = `order_mock_${Math.random().toString(36).substring(2, 11)}`;
     }
 
-    // COD Direct Placement
     const order = await Order.create({
       userId,
       fullName,
@@ -336,32 +313,28 @@ const createOrder = async (req, res) => {
       city,
       state,
       zip,
-      paymentMethod: 'COD',
-      paymentStatus: 'Pending',
+      paymentMethod: 'Razorpay',
+      paymentStatus: 'Failed',
       totalAmount: Number(totalAmount.toFixed(2)),
-      shippingCharges: deliveryCharge,
-      deliveryCharge: deliveryCharge,
+      shippingCharges: 0,
+      deliveryCharge: 0,
       couponCode: couponCode || '',
       items: orderItems,
       orderStatus: 'Pending',
-      razorpayOrderId: ''
+      razorpayOrderId: rzOrderId
     });
 
     const orderObj = order.toObject();
     orderObj.id = orderObj._id;
-    
-    // Clear user's cart
-    await Cart.deleteMany({ userId });
 
-    await logOrderStatusHistory(order._id, '', 'Pending', 'System', 'Order placed successfully (Cash on Delivery)');
+    await logOrderStatusHistory(order._id, '', 'Pending', 'System', 'Order draft created (prepaid payment pending)');
 
-    try {
-      await sendOrderStatusEmail(orderObj, 'Pending');
-    } catch (emailErr) {
-      console.error('Order notification email failed:', emailErr.message);
-    }
-    
-    return res.status(201).json(orderObj);
+    return res.status(201).json({
+      ...orderObj,
+      mockMode,
+      amount: amountInPaise,
+      currency: 'INR'
+    });
   } catch (error) {
     console.error(error);
     return res.status(500).json({ message: 'Server error placing order' });
@@ -378,26 +351,26 @@ const getMyOrders = async (req, res) => {
     return res.json(formatted);
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ message: 'Server error retrieving orders' });
+    return res.status(500).json({ message: 'Server error listing orders' });
   }
 };
 
-// Get single order details
+// Get details of a single order
 const getOrderDetails = async (req, res) => {
   try {
-    const paramId = req.params.id;
+    const { id } = req.params;
     let order = null;
-    if (mongoose.Types.ObjectId.isValid(paramId)) {
-      order = await Order.findById(paramId).lean();
+    if (mongoose.Types.ObjectId.isValid(id)) {
+      order = await Order.findById(id).lean();
     }
     if (!order) {
-      order = await Order.findOne({ _id: paramId }).lean();
+      order = await Order.findOne({ _id: id }).lean();
     }
-    
+
     if (!order) {
       return res.status(404).json({ message: 'Order not found' });
     }
-    
+
     const userId = req.user.id || req.user._id;
     const isAdmin = String(req.user.role || '').toUpperCase() === 'ADMIN' || req.user.email === 'admin@blc.com';
     
@@ -453,7 +426,7 @@ const generateInvoice = async (req, res) => {
     doc.font('Times-Roman').fontSize(10).fillColor('#444444');
     doc.text(`Invoice No: ${invoiceNo}`);
     doc.text(`Date: ${new Date(order.createdAt || Date.now()).toLocaleDateString()}`);
-    doc.text(`Payment Method: ${order.paymentMethod}`);
+    doc.text(`Payment Method: Online Payment (${order.paymentMethod || 'Razorpay'})`);
     doc.text(`Payment Status: ${order.paymentStatus}`);
 
     // Shipping address details
@@ -487,23 +460,14 @@ const generateInvoice = async (req, res) => {
     (order.items || []).forEach(item => {
       const currentY = doc.y;
       const total = Number(item.price) * Number(item.quantity);
-      doc.text(item.name, 50, currentY, { width: 200 });
+      const title = item.selectedSize ? `${item.name} (Size: ${item.selectedSize})` : item.name;
+      doc.text(title, 50, currentY, { width: 200 });
       doc.text('7113', 260, currentY, { width: 60, align: 'center' });
       doc.text(`₹${item.price}`, 320, currentY, { width: 70, align: 'right' });
       doc.text(`${item.quantity}`, 395, currentY, { width: 50, align: 'center' });
       doc.text(`₹${total}`, 450, currentY, { width: 100, align: 'right' });
       doc.moveDown(1.5);
     });
-
-    if (Number(order.deliveryCharge) > 0) {
-      const currentY = doc.y;
-      doc.text('Cash Collection & Shipping Charges', 50, currentY, { width: 200 });
-      doc.text('9968', 260, currentY, { width: 60, align: 'center' });
-      doc.text(`₹${order.deliveryCharge}`, 320, currentY, { width: 70, align: 'right' });
-      doc.text('1', 395, currentY, { width: 50, align: 'center' });
-      doc.text(`₹${order.deliveryCharge}`, 450, currentY, { width: 100, align: 'right' });
-      doc.moveDown(1.5);
-    }
 
     doc.strokeColor('#eccfb2').lineWidth(1).moveTo(50, doc.y).lineTo(550, doc.y).stroke();
     doc.moveDown(1.5);
@@ -516,13 +480,13 @@ const generateInvoice = async (req, res) => {
     doc.text(`₹${sub}`, 450, calculationsY, { align: 'right' });
 
     doc.moveDown(0.8);
-    const discount = sub - Number(order.totalAmount) + Number(order.deliveryCharge || 0);
+    const discount = sub - Number(order.totalAmount);
     doc.text(`Discount / Coupon:`, 320, doc.y);
     doc.text(`-₹${Math.max(0, discount).toFixed(2)}`, 450, doc.y, { align: 'right' });
 
     doc.moveDown(0.8);
     doc.text(`Shipping & Delivery:`, 320, doc.y);
-    doc.text(Number(order.deliveryCharge) > 0 ? `₹${order.deliveryCharge}` : 'FREE', 450, doc.y, { align: 'right' });
+    doc.text('FREE', 450, doc.y, { align: 'right' });
 
     doc.moveDown(0.8);
     const tax = Number(order.totalAmount) * 0.18;

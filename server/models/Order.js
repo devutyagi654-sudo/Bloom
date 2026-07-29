@@ -21,6 +21,10 @@ const orderItemSchema = new mongoose.Schema({
   image: {
     type: String,
     default: ''
+  },
+  selectedSize: {
+    type: String,
+    default: ''
   }
 });
 
@@ -60,8 +64,8 @@ const orderSchema = new mongoose.Schema({
   },
   paymentMethod: {
     type: String,
-    enum: ['COD', 'Razorpay', 'Card', 'UPI', 'NetBanking', 'MockPay'],
-    default: 'COD'
+    enum: ['Razorpay', 'Card', 'UPI', 'NetBanking', 'MockPay'],
+    default: 'Razorpay'
   },
   paymentStatus: {
     type: String,

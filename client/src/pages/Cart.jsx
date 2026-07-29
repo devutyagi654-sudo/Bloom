@@ -149,7 +149,12 @@ const Cart = () => {
                             <span className="text-[10px] uppercase font-bold tracking-widest text-[#4A3226]/50 dark:text-[#F7E8DF]/40 block mt-1">
                               Category: {item.product.category}
                             </span>
-                            <span className="text-xs font-semibold text-[#C98A63] block mt-1.5">
+                            {item.selectedSize && (
+                              <span className="text-xs font-bold text-[#C98A63] block mt-1">
+                                Size: {item.selectedSize}
+                              </span>
+                            )}
+                            <span className="text-xs font-semibold text-[#4A3226]/80 dark:text-[#F7E8DF]/80 block mt-1">
                               {formatDirectPrice(price)} each
                             </span>
                           </div>
@@ -219,7 +224,7 @@ const Cart = () => {
                     <span className="font-semibold text-green-500">FREE</span>
                   </div>
                   <div className="bg-[#F4DDD2]/40 dark:bg-[#120a06]/40 p-2.5 rounded-xl text-[10px] text-[#4A3226]/70 dark:text-[#F7E8DF]/60 leading-relaxed border border-[#C98A63]/20 dark:border-[#C98A63]/15">
-                    💡 Delivery is <strong>FREE</strong> for all prepaid orders. A flat <strong>₹50</strong> charge applies for Cash on Delivery (COD) selected at checkout.
+                    💡 Delivery is <strong>FREE</strong> for all prepaid orders worldwide.
                   </div>
                 </div>
 
