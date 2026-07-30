@@ -312,69 +312,65 @@ const ProductDetail = () => {
 
             {/* Add to cart / quantity selector / wishlist / Buy Now controls */}
             {Number(product.stock) > 0 && (
-              <div className="space-y-3 pt-2">
+              <div className="grid grid-cols-[auto_1fr_auto] gap-x-2.5 sm:gap-x-3 gap-y-2.5 sm:gap-y-3 items-center pt-2">
                 
-                {/* Top Row: Quantity Selector & Add to Cart + Wishlist Row */}
-                <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-                  
-                  {/* Quantity selection */}
-                  <div className="flex border border-neutral-300 dark:border-neutral-800 rounded-xl bg-white dark:bg-neutral-900 overflow-hidden self-start sm:self-auto h-12 flex-shrink-0">
-                    <button
-                      type="button"
-                      onClick={() => setQuantity(q => Math.max(1, q - 1))}
-                      className="px-3.5 py-2 text-lg font-bold hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-neutral-800 dark:text-neutral-200"
-                    >
-                      -
-                    </button>
-                    <span className="px-3.5 py-2 flex items-center font-bold text-sm w-11 justify-center text-neutral-800 dark:text-neutral-200">
-                      {quantity}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => setQuantity(q => Math.min(Number(product.stock), q + 1))}
-                      className="px-3.5 py-2 text-lg font-bold hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-neutral-800 dark:text-neutral-200"
-                    >
-                      +
-                    </button>
-                  </div>
-
-                  {/* Add to Cart + Wishlist flex row (always in SAME ROW on mobile and desktop) */}
-                  <div className="flex flex-row items-center gap-2.5 sm:gap-3 flex-nowrap flex-1 w-full">
-                    {/* Add to Cart button */}
-                    <button
-                      type="button"
-                      onClick={handleAddToCart}
-                      className="flex-1 h-12 flex items-center justify-center space-x-2 bg-gradient-to-r from-luxury-gold-600 to-luxury-gold-500 hover:from-luxury-gold-500 hover:to-luxury-gold-400 text-black font-bold text-xs tracking-widest uppercase rounded-xl shadow-md hover:shadow-lg transition-all duration-200"
-                    >
-                      <ShoppingCart className="w-4 h-4 flex-shrink-0" />
-                      <span className="truncate">Add to Cart</span>
-                    </button>
-
-                    {/* Wishlist toggle button (Fixed width 52px-56px, stays in same row) */}
-                    <button
-                      type="button"
-                      onClick={handleWishlistToggle}
-                      className="w-[52px] sm:w-[56px] h-12 flex-shrink-0 flex items-center justify-center border border-neutral-300 dark:border-neutral-800 rounded-xl bg-white dark:bg-neutral-900 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-neutral-700 dark:text-neutral-300 shadow-xs"
-                      title="Add to Wishlist"
-                    >
-                      <Heart className={`w-5 h-5 ${inWishlist ? 'fill-red-600 text-red-600' : ''}`} />
-                    </button>
-                  </div>
-
-                </div>
-
-                {/* Bottom Row: BUY NOW Button */}
-                <div>
+                {/* Row 1, Col 1: Quantity selection */}
+                <div className="flex border border-neutral-300 dark:border-neutral-800 rounded-xl bg-white dark:bg-neutral-900 overflow-hidden h-12 flex-shrink-0">
                   <button
                     type="button"
-                    onClick={handleBuyNow}
-                    disabled={buyNowLoading}
-                    className="w-full h-12 flex items-center justify-center space-x-2 bg-black hover:bg-neutral-900 text-white dark:bg-neutral-900 dark:hover:bg-black font-bold text-xs tracking-widest uppercase rounded-xl shadow-md hover:shadow-xl hover:scale-[1.005] active:scale-[0.99] transition-all duration-200 border border-black/10 dark:border-neutral-800 disabled:opacity-50"
+                    onClick={() => setQuantity(q => Math.max(1, q - 1))}
+                    className="px-3 sm:px-3.5 py-2 text-lg font-bold hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-neutral-800 dark:text-neutral-200"
                   >
-                    <Zap className="w-4 h-4 flex-shrink-0 text-luxury-gold-400" />
-                    <span>{buyNowLoading ? 'Processing...' : 'BUY NOW'}</span>
+                    -
+                  </button>
+                  <span className="px-2 sm:px-3 flex items-center font-bold text-sm min-w-9 justify-center text-neutral-800 dark:text-neutral-200">
+                    {quantity}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setQuantity(q => Math.min(Number(product.stock), q + 1))}
+                    className="px-3 sm:px-3.5 py-2 text-lg font-bold hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-neutral-800 dark:text-neutral-200"
+                  >
+                    +
                   </button>
                 </div>
+
+                {/* Row 1, Col 2: Add to Cart button */}
+                <button
+                  type="button"
+                  onClick={handleAddToCart}
+                  className="h-12 w-full flex items-center justify-center space-x-2 bg-gradient-to-r from-luxury-gold-600 to-luxury-gold-500 hover:from-luxury-gold-500 hover:to-luxury-gold-400 text-black font-bold text-xs tracking-widest uppercase rounded-xl shadow-md hover:shadow-lg transition-all duration-200"
+                >
+                  <ShoppingCart className="w-4 h-4 flex-shrink-0" />
+                  <span className="truncate">Add to Cart</span>
+                </button>
+
+                {/* Row 1, Col 3: Wishlist toggle button */}
+                <button
+                  type="button"
+                  onClick={handleWishlistToggle}
+                  className="w-12 sm:w-[56px] h-12 flex-shrink-0 flex items-center justify-center border border-neutral-300 dark:border-neutral-800 rounded-xl bg-white dark:bg-neutral-900 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-neutral-700 dark:text-neutral-300 shadow-xs"
+                  title="Add to Wishlist"
+                >
+                  <Heart className={`w-5 h-5 ${inWishlist ? 'fill-red-600 text-red-600' : ''}`} />
+                </button>
+
+                {/* Row 2, Col 1: Empty spacer matching Quantity selector column */}
+                <div></div>
+
+                {/* Row 2, Col 2: BUY NOW Button (Exact same grid column, width, height, font & radius as ADD TO CART) */}
+                <button
+                  type="button"
+                  onClick={handleBuyNow}
+                  disabled={buyNowLoading}
+                  className="h-12 w-full flex items-center justify-center space-x-2 bg-black hover:bg-neutral-900 text-white dark:bg-neutral-900 dark:hover:bg-black font-bold text-xs tracking-widest uppercase rounded-xl shadow-md hover:shadow-lg transition-all duration-200 border border-black/10 dark:border-neutral-800 disabled:opacity-50"
+                >
+                  <Zap className="w-4 h-4 flex-shrink-0 text-luxury-gold-400" />
+                  <span className="truncate">{buyNowLoading ? 'Processing...' : 'BUY NOW'}</span>
+                </button>
+
+                {/* Row 2, Col 3: Empty spacer matching Wishlist icon column */}
+                <div></div>
 
               </div>
             )}
