@@ -2,12 +2,11 @@ const Cart = require('../models/Cart');
 const Product = require('../models/Product');
 const mongoose = require('mongoose');
 
-// Helper to identify Bangles / Bracelet products
+// Helper to identify Bangles category products strictly
 const isBanglesCategory = (product) => {
   if (!product) return false;
   const cat = String(product.category || '').toLowerCase().trim();
-  const name = String(product.name || '').toLowerCase();
-  return cat.includes('bangle') || cat.includes('bracelet') || name.includes('bangle') || name.includes('bracelet');
+  return cat === 'bangles' || cat === 'bangle';
 };
 
 // Get user cart items

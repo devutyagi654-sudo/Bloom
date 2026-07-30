@@ -34,24 +34,32 @@ const getProducts = async (req, res) => {
       );
     }
 
-    // Category filter
+    // Category filter (Exact category matching)
     if (req.query.category) {
       const cat = req.query.category.toLowerCase().trim();
       products = products.filter(p => {
         const prodCat = String(p.category || '').toLowerCase().trim();
-        const prodName = String(p.name || '').toLowerCase();
         
-        if (cat === 'bracelet' || cat === 'bracelets' || cat === 'bangles') {
-          return prodCat === 'bangles' || prodCat === 'bracelet' || prodCat === 'bracelets' || prodName.includes('bangle') || prodName.includes('bracelet');
+        if (cat === 'bangles' || cat === 'bangle') {
+          return prodCat === 'bangles' || prodCat === 'bangle';
         }
-        if (cat === 'watch' || cat === 'watches') {
-          return prodCat === 'watches' || prodCat === 'watch' || prodName.includes('watch');
+        if (cat === 'bracelets' || cat === 'bracelet') {
+          return prodCat === 'bracelets' || prodCat === 'bracelet';
         }
-        if (cat === 'pendant' || cat === 'pendants') {
-          return prodCat === 'pendant' || prodCat === 'pendants' || prodCat === 'necklaces' || prodCat === 'rings' || prodName.includes('pendant') || prodName.includes('necklace') || prodName.includes('ring');
+        if (cat === 'watches' || cat === 'watch') {
+          return prodCat === 'watches' || prodCat === 'watch';
         }
-        if (cat === 'hamper' || cat === 'hampers') {
-          return prodCat === 'hamper' || prodCat === 'hampers' || prodName.includes('hamper') || prodName.includes('box');
+        if (cat === 'pendants' || cat === 'pendant') {
+          return prodCat === 'pendants' || prodCat === 'pendant';
+        }
+        if (cat === 'hampers' || cat === 'hamper') {
+          return prodCat === 'hampers' || prodCat === 'hamper';
+        }
+        if (cat === 'rings' || cat === 'ring') {
+          return prodCat === 'rings' || prodCat === 'ring';
+        }
+        if (cat === 'earrings' || cat === 'earring') {
+          return prodCat === 'earrings' || prodCat === 'earring';
         }
         
         return prodCat === cat;

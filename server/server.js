@@ -45,13 +45,41 @@ async function seedDatabase() {
     const productCount = await Product.countDocuments();
     const userCount = await User.countDocuments();
 
+    // Ensure Bangles category exists and migration for existing DB records
+    await Category.findOneAndUpdate(
+      { name: { $regex: /^bangles$/i } },
+      { name: 'Bangles', description: 'Handcrafted traditional and modern gold & silver bangles.', image: 'https://images.unsplash.com/photo-1611591437281-460bfbe1220a?w=600&auto=format&fit=crop&q=80' },
+      { upsert: true, new: true }
+    );
+    await Category.findOneAndUpdate(
+      { name: { $regex: /^bracelets?$/i } },
+      { name: 'Bracelets', description: 'Sleek luxury gold, silver and diamond bracelets.', image: 'https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?w=600&auto=format&fit=crop&q=80' },
+      { upsert: true, new: true }
+    );
+
+    // Migration: Update existing products whose name contains "bangle" to category "Bangles"
+    await Product.updateMany(
+      { name: { $regex: /bangle/i }, category: { $regex: /^bracelets?$/i } },
+      { $set: { category: 'Bangles' } }
+    );
+    // Migration: Update existing products whose name contains "bracelet" to category "Bracelets"
+    await Product.updateMany(
+      { name: { $regex: /bracelet/i }, category: { $regex: /^bangles?$/i } },
+      { $set: { category: 'Bracelets' } }
+    );
+
     // Seed Categories
     if (categoryCount === 0) {
       const defaultCategories = [
         {
-          name: 'Bracelet',
-          description: 'Sleek luxury gold, silver and traditional bridal bangles & bracelets.',
+          name: 'Bangles',
+          description: 'Handcrafted traditional and modern gold & silver bangles.',
           image: 'https://images.unsplash.com/photo-1611591437281-460bfbe1220a?w=600&auto=format&fit=crop&q=80'
+        },
+        {
+          name: 'Bracelets',
+          description: 'Sleek luxury gold, silver and diamond bracelets.',
+          image: 'https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?w=600&auto=format&fit=crop&q=80'
         },
         {
           name: 'Earrings',
@@ -105,7 +133,7 @@ async function seedDatabase() {
           description: 'Exquisitely handcrafted traditional bangles with micro-etched patterns and delicate silver bells (ghungroos). Plated in premium 22k gold.',
           price: 999,
           discountPrice: 550,
-          category: 'Bracelet',
+          category: 'Bangles',
           stock: 24,
           images: [
             'https://images.unsplash.com/photo-1611591437281-460bfbe1220a?w=600&auto=format&fit=crop&q=80',

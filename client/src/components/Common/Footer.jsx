@@ -72,7 +72,10 @@ const Footer = () => {
                 <Link to="/shop?category=Hamper" className="hover:text-luxury-gold-500 transition-colors">Hampers</Link>
               </li>
               <li>
-                <Link to="/shop?category=Bangles" className="hover:text-luxury-gold-500 transition-colors">Bangles & Bracelets</Link>
+                <Link to="/shop?category=Bangles" className="hover:text-luxury-gold-500 transition-colors">Bangles</Link>
+              </li>
+              <li>
+                <Link to="/shop?category=Bracelets" className="hover:text-luxury-gold-500 transition-colors">Bracelets</Link>
               </li>
               <li>
                 <Link to="/shop?category=Watches" className="hover:text-luxury-gold-500 transition-colors">Premium Timepieces</Link>

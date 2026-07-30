@@ -34,8 +34,7 @@ const ProductDetail = () => {
   const isBanglesCategory = (prod) => {
     if (!prod) return false;
     const cat = String(prod.category || '').toLowerCase().trim();
-    const name = String(prod.name || '').toLowerCase();
-    return cat.includes('bangle') || cat.includes('bracelet') || name.includes('bangle') || name.includes('bracelet');
+    return cat === 'bangles' || cat === 'bangle';
   };
 
   const fetchProductDetails = async () => {
