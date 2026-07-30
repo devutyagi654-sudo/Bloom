@@ -51,27 +51,53 @@ const getTrackingDetails = async (req, res) => {
     }
 
     if (!order.awbCode) {
-      return res.status(400).json({ message: 'Shipment tracking not yet initiated for this order' });
+      return res.status(200).json({
+        success: true,
+        trackingInitiated: false,
+        orderId: order._id,
+        awbCode: null,
+        courierName: order.courierName || 'BLC Logistics',
+        currentStatus: order.orderStatus || 'Order Confirmed',
+        origin: 'C-242, Harsh Vihar, Hari Nagar, Jaitpur, Badarpur, New Delhi – 110044',
+        destination: `${order.city}, ${order.state}`,
+        trackingUrl: order.trackingUrl || '',
+        milestones: [
+          { activity: 'Order Confirmed & Payment Verified', location: 'New Delhi Fulfilment Hub', date: order.createdAt }
+        ],
+        scans: [
+          { activity: 'Order Confirmed & Payment Verified', location: 'New Delhi Fulfilment Hub', date: order.createdAt }
+        ]
+      });
     }
 
     const liveTrackingData = await trackShiprocketOrder(order.awbCode);
 
     if (liveTrackingData) {
+      const scansArr = liveTrackingData.shipment_track_activities || [];
       return res.json({
         success: true,
+        trackingInitiated: true,
         orderId: order._id,
         awbCode: order.awbCode,
         courierName: order.courierName,
         currentStatus: liveTrackingData.track_status || order.orderStatus,
         origin: liveTrackingData.origin || 'C-242, Harsh Vihar, Hari Nagar, Jaitpur, Badarpur, New Delhi – 110044',
         destination: liveTrackingData.destination || `${order.city}, ${order.state}`,
-        scans: liveTrackingData.shipment_track_activities || []
+        milestones: scansArr,
+        scans: scansArr
       });
     }
 
     // Fallback simulated tracking log
+    const fallbackScans = [
+      { activity: 'Order Packed & Verified', location: 'C-242, Harsh Vihar, Hari Nagar, Jaitpur, Badarpur, New Delhi – 110044', date: order.createdAt },
+      { activity: 'Handed Over to Courier Partner', location: order.courierName || 'BlueDart', date: new Date().toISOString() },
+      { activity: `In Transit to ${order.city}`, location: 'Logistics Center', date: new Date().toISOString() }
+    ];
+
     return res.json({
       success: true,
+      trackingInitiated: true,
       orderId: order._id,
       awbCode: order.awbCode,
       courierName: order.courierName,
@@ -79,11 +105,8 @@ const getTrackingDetails = async (req, res) => {
       origin: 'C-242, Harsh Vihar, Hari Nagar, Jaitpur, Badarpur, New Delhi – 110044',
       destination: `${order.city}, ${order.state}`,
       trackingUrl: order.trackingUrl,
-      scans: [
-        { activity: 'Order Packed & Verified', location: 'C-242, Harsh Vihar, Hari Nagar, Jaitpur, Badarpur, New Delhi – 110044', date: order.createdAt },
-        { activity: 'Handed Over to Courier Partner', location: order.courierName || 'BlueDart', date: new Date().toISOString() },
-        { activity: `In Transit to ${order.city}`, location: 'Logistics Center', date: new Date().toISOString() }
-      ]
+      milestones: fallbackScans,
+      scans: fallbackScans
     });
   } catch (error) {
     console.error('Error fetching tracking details:', error);
