@@ -108,6 +108,9 @@ const Checkout = () => {
               razorpayOrderId: rzOrderId,
               razorpayPaymentId: `pay_mock_${Math.random().toString(36).substring(2, 11)}`,
               razorpaySignature: 'mock_signature',
+              razorpay_order_id: rzOrderId,
+              razorpay_payment_id: `pay_mock_${Math.random().toString(36).substring(2, 11)}`,
+              razorpay_signature: 'mock_signature',
               orderData: orderPayload
             },
             { headers: { Authorization: `Bearer ${token}` } }
@@ -135,15 +138,21 @@ const Checkout = () => {
         image: 'https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=120&auto=format&fit=crop&q=80',
         order_id: rzOrderId,
         handler: async function (response) {
+          console.log('[RAZORPAY_CHECKOUT_RESPONSE]', response);
           try {
+            const verifyPayload = {
+              razorpayOrderId: response.razorpay_order_id,
+              razorpayPaymentId: response.razorpay_payment_id,
+              razorpaySignature: response.razorpay_signature,
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+              orderData: orderPayload
+            };
+
             const verifyRes = await axios.post(
               `${API_URL}/payment/verify`,
-              {
-                razorpayOrderId: response.razorpay_order_id,
-                razorpayPaymentId: response.razorpay_payment_id,
-                razorpaySignature: response.razorpay_signature,
-                orderData: orderPayload
-              },
+              verifyPayload,
               { headers: { Authorization: `Bearer ${token}` } }
             );
 
@@ -157,8 +166,8 @@ const Checkout = () => {
               setError(verifyRes.data.message || 'Payment verification failed');
             }
           } catch (err) {
-            console.error('[PAYMENT_VERIFICATION_FAILED]', err);
-            setError(err.response?.data?.message || 'Payment verification failed. Please contact support.');
+            console.error('[PAYMENT_VERIFICATION_ERROR]', err);
+            setError(err.response?.data?.message || 'Payment verification failed');
           } finally {
             setSubmitting(false);
           }

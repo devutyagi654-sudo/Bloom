@@ -76,18 +76,25 @@ const verifyPayment = async (req, res) => {
       razorpayOrderId,
       razorpayPaymentId,
       razorpaySignature,
+      razorpay_order_id,
+      razorpay_payment_id,
+      razorpay_signature,
       orderData
     } = req.body;
 
-    console.log('[PAYMENT_VERIFY_REQUEST] Processing payment verification:', {
-      razorpayOrderId,
-      razorpayPaymentId,
-      hasSignature: Boolean(razorpaySignature),
-      hasOrderData: Boolean(orderData)
-    });
+    const rzOrderId = String(razorpay_order_id || razorpayOrderId || '').trim();
+    const rzPaymentId = String(razorpay_payment_id || razorpayPaymentId || '').trim();
+    const rzSignature = String(razorpay_signature || razorpaySignature || '').trim();
 
-    if (!razorpayOrderId || !razorpayPaymentId) {
-      console.error('[PAYMENT_VERIFY_ERROR] Missing razorpayOrderId or razorpayPaymentId');
+    console.log('===================================');
+    console.log('--- RAZORPAY VERIFICATION LOGS ---');
+    console.log('Received razorpay_order_id:', rzOrderId);
+    console.log('Received razorpay_payment_id:', rzPaymentId);
+    console.log('Received razorpay_signature:', rzSignature);
+    console.log('RAZORPAY_KEY_SECRET configured:', keySecret ? `YES (Length: ${keySecret.length}, Prefix: ${keySecret.substring(0, 4)}***)` : 'NO');
+
+    if (!rzOrderId || !rzPaymentId) {
+      console.error('[RAZORPAY_VERIFY_FAILURE] Missing razorpay_order_id or razorpay_payment_id');
       return res.status(400).json({
         success: false,
         message: 'Missing Razorpay order or payment reference ID'
@@ -95,60 +102,69 @@ const verifyPayment = async (req, res) => {
     }
 
     let isSignatureValid = false;
+    let generated_signature = '';
 
     if (razorpay) {
-      if (!razorpaySignature) {
-        console.error('[PAYMENT_VERIFY_ERROR] Missing razorpaySignature in production mode');
+      if (!rzSignature) {
+        console.error('[RAZORPAY_VERIFY_FAILURE] Missing razorpay_signature in production mode');
         return res.status(400).json({
           success: false,
           message: 'Razorpay payment signature is required for verification'
         });
       }
 
-      const text = `${razorpayOrderId}|${razorpayPaymentId}`;
-      const generated_signature = crypto
+      const text = `${rzOrderId}|${rzPaymentId}`;
+      generated_signature = crypto
         .createHmac('sha256', keySecret)
         .update(text)
         .digest('hex');
 
-      isSignatureValid = (generated_signature === razorpaySignature);
+      isSignatureValid = (generated_signature === rzSignature);
+
+      console.log('Generated signature:', generated_signature);
+      console.log('Comparison result:', isSignatureValid ? 'MATCH ✅' : 'MISMATCH ❌');
+      console.log('===================================');
 
       if (!isSignatureValid) {
-        console.error('[PAYMENT_VERIFY_ERROR] Signature mismatch!', {
-          generated_signature,
-          received_signature: razorpaySignature,
-          razorpayOrderId,
-          razorpayPaymentId
+        console.error('[RAZORPAY_VERIFY_FAILURE] Signature mismatch details:', {
+          reason: 'Generated HMAC-SHA256 signature does not match received razorpay_signature.',
+          expected: generated_signature,
+          received: rzSignature,
+          text_to_sign: text,
+          key_secret_prefix: keySecret ? keySecret.substring(0, 4) + '***' : 'NONE'
         });
-      } else {
-        console.log('[PAYMENT_VERIFY_SUCCESS] Signature verified successfully for Razorpay order:', razorpayOrderId);
+        return res.status(400).json({
+          success: false,
+          message: 'Payment verification failed: Signature mismatch. Please verify that RAZORPAY_KEY_SECRET in backend environment variables belongs to the exact same Razorpay account and environment as RAZORPAY_KEY_ID.'
+        });
       }
     } else {
-      // Mock mode validation for local development
+      // Mock mode validation for development testing
       isSignatureValid = Boolean(
-        razorpayOrderId.startsWith('order_mock_') ||
-        razorpayOrderId.startsWith('order_') ||
-        razorpayOrderId.startsWith('BLC-') ||
-        razorpaySignature === 'mock_signature'
+        rzOrderId.startsWith('order_mock_') ||
+        rzOrderId.startsWith('order_') ||
+        rzOrderId.startsWith('BLC-') ||
+        rzSignature === 'mock_signature'
       );
-      console.log('[PAYMENT_VERIFY_MOCK] Signature status in mock mode:', isSignatureValid);
+      console.log('Comparison result (Mock Mode):', isSignatureValid ? 'MATCH ✅' : 'MISMATCH ❌');
+      console.log('===================================');
     }
 
     if (!isSignatureValid) {
       return res.status(400).json({
         success: false,
-        message: 'Payment verification failed: Signature mismatch'
+        message: 'Payment verification failed: Invalid signature'
       });
     }
 
     const userId = req.user.id || req.user._id;
 
-    // Check if an order draft already exists in MongoDB
-    const existingOrder = await Order.findOne({ razorpayOrderId });
+    // Check if order draft already exists in MongoDB
+    const existingOrder = await Order.findOne({ razorpayOrderId: rzOrderId });
 
     if (existingOrder) {
       if (existingOrder.paymentStatus !== 'Paid') {
-        // Deduct inventory stock if not already deducted
+        // Deduct inventory stock
         const cartItems = await Cart.find({ userId });
         for (const item of cartItems) {
           let product = null;
@@ -166,11 +182,11 @@ const verifyPayment = async (req, res) => {
 
         existingOrder.paymentStatus = 'Paid';
         existingOrder.orderStatus = 'Order Confirmed';
-        existingOrder.razorpayPaymentId = razorpayPaymentId;
-        existingOrder.razorpaySignature = razorpaySignature || 'mock_signature';
+        existingOrder.razorpayPaymentId = rzPaymentId;
+        existingOrder.razorpaySignature = rzSignature || 'mock_signature';
         await existingOrder.save();
 
-        console.log(`[PAYMENT_VERIFY_SUCCESS] Existing Order #${existingOrder._id} marked as Paid and Confirmed.`);
+        console.log(`[RAZORPAY_VERIFY_SUCCESS] Existing Order #${existingOrder._id} marked as Paid & Confirmed.`);
 
         await transitionOrderStatus(existingOrder._id, 'Order Confirmed', 'System', 'Prepaid payment verified successfully');
         await Cart.deleteMany({ userId });
@@ -186,13 +202,13 @@ const verifyPayment = async (req, res) => {
       });
     }
 
-    // Fresh Order Creation after Verified Payment Signature
+    // Fresh Order Creation after verified payment signature
     const {
       fullName, email, mobile, address, city, state, zip
     } = orderData || {};
 
     if (!fullName || !email || !mobile || !address || !city || !state || !zip) {
-      console.error('[PAYMENT_VERIFY_ERROR] Missing shipping details in orderData:', orderData);
+      console.error('[RAZORPAY_VERIFY_FAILURE] Missing shipping details in orderData:', orderData);
       return res.status(400).json({
         success: false,
         message: 'Please provide all shipping and contact details'
@@ -201,7 +217,7 @@ const verifyPayment = async (req, res) => {
 
     const userCart = await Cart.find({ userId });
     if (userCart.length === 0) {
-      console.error('[PAYMENT_VERIFY_ERROR] Cart is empty for user:', userId);
+      console.error('[RAZORPAY_VERIFY_FAILURE] Shopping cart is empty for user:', userId);
       return res.status(400).json({
         success: false,
         message: 'Your shopping cart is empty'
@@ -220,7 +236,7 @@ const verifyPayment = async (req, res) => {
         product = await Product.findOne({ _id: item.productId });
       }
       if (!product) {
-        console.error('[PAYMENT_VERIFY_ERROR] Product not found for ID:', item.productId);
+        console.error('[RAZORPAY_VERIFY_FAILURE] Product not found for ID:', item.productId);
         return res.status(404).json({
           success: false,
           message: 'One or more products in your cart were not found'
@@ -229,7 +245,7 @@ const verifyPayment = async (req, res) => {
 
       const qty = Number(item.quantity);
       if (Number(product.stock) < qty) {
-        console.error(`[PAYMENT_VERIFY_ERROR] Insufficient stock for ${product.name}. Stock: ${product.stock}, Req: ${qty}`);
+        console.error(`[RAZORPAY_VERIFY_FAILURE] Insufficient stock for ${product.name}. Stock: ${product.stock}, Req: ${qty}`);
         return res.status(400).json({
           success: false,
           message: `Insufficient stock for ${product.name}`
@@ -268,7 +284,7 @@ const verifyPayment = async (req, res) => {
       }
     }
 
-    // Save order to MongoDB after verified payment
+    // Save order to MongoDB
     const order = await Order.create({
       userId,
       fullName,
@@ -286,12 +302,12 @@ const verifyPayment = async (req, res) => {
       couponCode: '',
       items: orderItems,
       orderStatus: 'Order Confirmed',
-      razorpayOrderId,
-      razorpayPaymentId,
-      razorpaySignature: razorpaySignature || 'mock_signature'
+      razorpayOrderId: rzOrderId,
+      razorpayPaymentId: rzPaymentId,
+      razorpaySignature: rzSignature || 'mock_signature'
     });
 
-    console.log(`[PAYMENT_VERIFY_SUCCESS] Order #${order._id} created and saved to MongoDB.`);
+    console.log(`[RAZORPAY_VERIFY_SUCCESS] Order #${order._id} created and saved to MongoDB.`);
 
     // Clear cart after order is successfully placed
     await Cart.deleteMany({ userId });
@@ -306,14 +322,14 @@ const verifyPayment = async (req, res) => {
     const resObj = order.toObject();
     resObj.id = resObj._id;
 
-    return res.status(201).json({
+    return res.status(200).json({
       success: true,
       message: 'Payment verified and order created successfully',
       order: resObj
     });
 
   } catch (error) {
-    console.error('[PAYMENT_VERIFY_CRITICAL_ERROR] Exception in verifyPayment:', error);
+    console.error('[RAZORPAY_VERIFY_CRITICAL_ERROR] Exception in verifyPayment:', error);
     return res.status(500).json({
       success: false,
       message: error.message || 'Server error processing payment verification'
