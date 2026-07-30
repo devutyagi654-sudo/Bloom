@@ -109,8 +109,8 @@ const sendOrderStatusEmail = async (order, status) => {
       </table>
 
       <div style="text-align: center; margin-top: 30px; font-size: 11px; color: #8a502d; border-top: 1px solid #eccfb2; padding-top: 20px;">
-        <p>© 2026 bloomluxecollection. All rights reserved.</p>
-        <p>This is an automated shipping status updates notification system.</p>
+        <p>© 2026 bloomluxecollection. C-242, Harsh Vihar, Hari Nagar, Jaitpur, Badarpur, New Delhi – 110044</p>
+        <p>Support: <a href="mailto:bloomluxe.support@gmail.com" style="color: #8a502d; text-decoration: underline;">bloomluxe.support@gmail.com</a></p>
       </div>
     </div>
   `;
@@ -416,6 +416,7 @@ const generateInvoice = async (req, res) => {
     // BLC Brand Header
     doc.font('Times-Bold').fontSize(22).fillColor('#2e1407').text('bloomluxecollection', { align: 'center' });
     doc.font('Times-Roman').fontSize(9).fillColor('#8a502d').text('PREMIUM LUXURY FASHION & ACCESSORIES', { align: 'center', characterSpacing: 1.5 });
+    doc.font('Times-Roman').fontSize(8).fillColor('#666666').text('C-242, Harsh Vihar, Hari Nagar, Jaitpur, Badarpur, New Delhi – 110044 | Support: bloomluxe.support@gmail.com', { align: 'center' });
     doc.moveDown(2);
 
     // Invoice Meta details

@@ -68,9 +68,9 @@ const Contact = () => {
               <div>
                 <h5 className="font-semibold text-neutral-800 dark:text-neutral-200 text-sm">Headquarters Atelier</h5>
                 <p className="text-xs text-neutral-500 mt-1 leading-relaxed">
-                  bloomluxecollection Group Ltd.<br />
-                  72 Royal Promenade, Mayfair<br />
-                  London, W1S 4PT
+                  bloomluxecollection<br />
+                  C-242, Harsh Vihar, Hari Nagar,<br />
+                  Jaitpur, Badarpur, New Delhi – 110044
                 </p>
               </div>
             </div>
@@ -80,8 +80,7 @@ const Contact = () => {
               <div>
                 <h5 className="font-semibold text-neutral-800 dark:text-neutral-200 text-sm">Client Phone Line</h5>
                 <p className="text-xs text-neutral-500 mt-1">
-                  General: +44 (0) 20 7946 0884<br />
-                  Support: +44 (0) 20 7946 0991
+                  Customer Support: +91 99999 99999
                 </p>
               </div>
             </div>
@@ -91,8 +90,7 @@ const Contact = () => {
               <div>
                 <h5 className="font-semibold text-neutral-800 dark:text-neutral-200 text-sm">Digital Correspondence</h5>
                 <p className="text-xs text-neutral-500 mt-1">
-                  General: info@blc.com<br />
-                  Relations: support@blc.com
+                  Email: <a href="mailto:bloomluxe.support@gmail.com" className="hover:text-luxury-gold-500 underline transition-colors">bloomluxe.support@gmail.com</a>
                 </p>
               </div>
             </div>

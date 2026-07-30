@@ -659,9 +659,9 @@ const Navbar = () => {
                   <p className="text-[10px] text-neutral-455 mt-0.5">📞 +91 22 4589 1200 • Mon - Sun: 11 AM - 8 PM</p>
                 </div>
                 <div className="border-b border-neutral-100 dark:border-neutral-900 pb-3">
-                  <span className="text-xs font-bold text-neutral-800 dark:text-neutral-200 uppercase tracking-widest">New Delhi Boutique</span>
-                  <p className="text-xs text-neutral-500 mt-1">Radial Road 1, Connaught Place, New Delhi, DL 110001</p>
-                  <p className="text-[10px] text-neutral-455 mt-0.5">📞 +91 11 3985 4300 • Mon - Sun: 11 AM - 8:30 PM</p>
+                  <span className="text-xs font-bold text-neutral-800 dark:text-neutral-200 uppercase tracking-widest">Headquarters Atelier & Boutique</span>
+                  <p className="text-xs text-neutral-500 mt-1">C-242, Harsh Vihar, Hari Nagar, Jaitpur, Badarpur, New Delhi – 110044</p>
+                  <p className="text-[10px] text-neutral-455 mt-0.5">✉️ bloomluxe.support@gmail.com • Mon - Sun: 10 AM - 8 PM</p>
                 </div>
                 <div className="border-b border-neutral-100 dark:border-neutral-900 pb-3">
                   <span className="text-xs font-bold text-neutral-800 dark:text-neutral-200 uppercase tracking-widest">Bengaluru Atelier</span>

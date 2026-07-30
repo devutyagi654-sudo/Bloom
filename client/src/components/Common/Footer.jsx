@@ -106,14 +106,11 @@ const Footer = () => {
           <div className="space-y-4">
             <h4 className="text-[#4A3226] dark:text-white font-semibold uppercase tracking-widest text-xs font-playfair">The Atelier</h4>
             <ul className="space-y-2 text-sm text-[#4A3226]/70 dark:text-[#F7E8DF]/65">
-              <li>bloomluxecollection Group Ltd.</li>
-              <li>72 Royal Promenade, Mayfair</li>
-              <li>London, W1S 4PT</li>
+              <li>bloomluxecollection</li>
+              <li>C-242, Harsh Vihar, Hari Nagar</li>
+              <li>Jaitpur, Badarpur, New Delhi – 110044</li>
               <li className="pt-2 text-[#4A3226]/80 dark:text-[#F7E8DF]/60">
-                Email: <a href="mailto:support@blc.com" className="hover:text-luxury-gold-500">support@blc.com</a>
-              </li>
-              <li className="text-[#4A3226]/80 dark:text-[#F7E8DF]/60">
-                Tel: +44 (0) 20 7946 0884
+                Email: <a href="mailto:bloomluxe.support@gmail.com" className="hover:text-luxury-gold-500">bloomluxe.support@gmail.com</a>
               </li>
             </ul>
           </div>

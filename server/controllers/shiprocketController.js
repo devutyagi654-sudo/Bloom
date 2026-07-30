@@ -63,7 +63,7 @@ const getTrackingDetails = async (req, res) => {
         awbCode: order.awbCode,
         courierName: order.courierName,
         currentStatus: liveTrackingData.track_status || order.orderStatus,
-        origin: liveTrackingData.origin || 'New Delhi Warehouse',
+        origin: liveTrackingData.origin || 'C-242, Harsh Vihar, Hari Nagar, Jaitpur, Badarpur, New Delhi – 110044',
         destination: liveTrackingData.destination || `${order.city}, ${order.state}`,
         scans: liveTrackingData.shipment_track_activities || []
       });
@@ -76,11 +76,11 @@ const getTrackingDetails = async (req, res) => {
       awbCode: order.awbCode,
       courierName: order.courierName,
       currentStatus: order.orderStatus,
-      origin: 'New Delhi Warehouse',
+      origin: 'C-242, Harsh Vihar, Hari Nagar, Jaitpur, Badarpur, New Delhi – 110044',
       destination: `${order.city}, ${order.state}`,
       trackingUrl: order.trackingUrl,
       scans: [
-        { activity: 'Order Packed & Verified', location: 'New Delhi Warehouse', date: order.createdAt },
+        { activity: 'Order Packed & Verified', location: 'C-242, Harsh Vihar, Hari Nagar, Jaitpur, Badarpur, New Delhi – 110044', date: order.createdAt },
         { activity: 'Handed Over to Courier Partner', location: order.courierName || 'BlueDart', date: new Date().toISOString() },
         { activity: `In Transit to ${order.city}`, location: 'Logistics Center', date: new Date().toISOString() }
       ]
