@@ -195,7 +195,7 @@ const createOrder = async (req, res) => {
   try {
     const {
       fullName, email, mobile, address, city, state, zip,
-      paymentMethod, couponCode
+      paymentMethod
     } = req.body;
     
     if (!fullName || !email || !mobile || !address || !city || !state || !zip) {
@@ -252,20 +252,8 @@ const createOrder = async (req, res) => {
       });
     }
     
-    let discount = 0;
-    if (couponCode) {
-      const code = couponCode.toUpperCase().trim();
-      if (code === 'BLC10') {
-        discount = subtotal * 0.10;
-      } else if (code === 'LUXURY20') {
-        discount = subtotal * 0.20;
-      } else if (code === 'WELCOME500') {
-        discount = Math.min(500, subtotal);
-      }
-    }
-    
     const deliveryCharge = 0;
-    const totalAmount = subtotal - discount;
+    const totalAmount = subtotal;
     
     // Deduct stock in Product documents
     for (const item of userCart) {
@@ -317,7 +305,7 @@ const createOrder = async (req, res) => {
       totalAmount: Number(totalAmount.toFixed(2)),
       shippingCharges: 0,
       deliveryCharge: 0,
-      couponCode: couponCode || '',
+      couponCode: '',
       items: orderItems,
       orderStatus: 'Pending',
       razorpayOrderId: rzOrderId
@@ -480,9 +468,6 @@ const generateInvoice = async (req, res) => {
     doc.text(`₹${sub}`, 450, calculationsY, { align: 'right' });
 
     doc.moveDown(0.8);
-    const discount = sub - Number(order.totalAmount);
-    doc.text(`Discount / Coupon:`, 320, doc.y);
-    doc.text(`-₹${Math.max(0, discount).toFixed(2)}`, 450, doc.y, { align: 'right' });
 
     doc.moveDown(0.8);
     doc.text(`Shipping & Delivery:`, 320, doc.y);

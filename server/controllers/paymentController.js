@@ -121,7 +121,7 @@ const verifyPayment = async (req, res) => {
     // Process fresh order creation
     const {
       fullName, email, mobile, address, city, state, zip,
-      shippingCharges, couponCode
+      shippingCharges
     } = orderData || {};
 
     if (!fullName || !email || !mobile || !address || !city || !state || !zip) {
@@ -167,19 +167,7 @@ const verifyPayment = async (req, res) => {
       });
     }
 
-    let discount = 0;
-    if (couponCode) {
-      const code = couponCode.toUpperCase().trim();
-      if (code === 'BLC10') {
-        discount = subtotal * 0.10;
-      } else if (code === 'LUXURY20') {
-        discount = subtotal * 0.20;
-      } else if (code === 'WELCOME500') {
-        discount = Math.min(500, subtotal);
-      }
-    }
-
-    const totalAmount = subtotal - discount;
+    const totalAmount = subtotal;
 
     // Deduct stock
     for (const item of userCart) {
@@ -210,7 +198,7 @@ const verifyPayment = async (req, res) => {
       totalAmount: Number(totalAmount.toFixed(2)),
       shippingCharges: 0,
       deliveryCharge: 0,
-      couponCode: couponCode || '',
+      couponCode: '',
       items: orderItems,
       orderStatus: 'Pending',
       razorpayOrderId,
