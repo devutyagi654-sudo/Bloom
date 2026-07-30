@@ -5,29 +5,34 @@ const mongoose = require('mongoose');
 const Order = require('../models/Order');
 const Product = require('../models/Product');
 const Cart = require('../models/Cart');
-const { createShipmentInternal } = require('./shippingController');
 const { sendOrderStatusEmail, logOrderStatusHistory, transitionOrderStatus } = require('./orderController');
 
-// Initialize Razorpay SDK if keys are configured
-let razorpay = null;
-const isRazorpayConfigured = process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_ID !== 'your_razorpay_key_id' &&
-                             process.env.RAZORPAY_KEY_SECRET && process.env.RAZORPAY_KEY_SECRET !== 'your_razorpay_key_secret';
+// Initialize Razorpay SDK cleanly with trimmed keys from environment variables
+const keyId = process.env.RAZORPAY_KEY_ID ? String(process.env.RAZORPAY_KEY_ID).trim() : '';
+const keySecret = process.env.RAZORPAY_KEY_SECRET ? String(process.env.RAZORPAY_KEY_SECRET).trim() : '';
 
+const isRazorpayConfigured = Boolean(
+  keyId && keyId !== 'your_razorpay_key_id' &&
+  keySecret && keySecret !== 'your_razorpay_key_secret'
+);
+
+let razorpay = null;
 if (isRazorpayConfigured) {
   razorpay = new Razorpay({
-    key_id: process.env.RAZORPAY_KEY_ID,
-    key_secret: process.env.RAZORPAY_KEY_SECRET
+    key_id: keyId,
+    key_secret: keySecret
   });
+  console.log('[RAZORPAY] SDK initialized with configured environment credentials.');
 } else {
-  console.log('Razorpay is running in SIMULATED MOCK MODE.');
+  console.log('[RAZORPAY] Running in SIMULATED MOCK MODE.');
 }
 
 // Create Razorpay Order
 const createRazorpayOrder = async (req, res) => {
   try {
     const { amount } = req.body;
-    if (!amount) {
-      return res.status(400).json({ message: 'Amount is required' });
+    if (!amount || isNaN(Number(amount)) || Number(amount) <= 0) {
+      return res.status(400).json({ success: false, message: 'Valid payment amount is required' });
     }
 
     const amountInPaise = Math.round(Number(amount) * 100);
@@ -44,6 +49,7 @@ const createRazorpayOrder = async (req, res) => {
         orderId: order.id,
         amount: order.amount,
         currency: order.currency,
+        keyId,
         mockMode: false
       });
     } else {
@@ -53,16 +59,17 @@ const createRazorpayOrder = async (req, res) => {
         orderId: mockOrderId,
         amount: amountInPaise,
         currency: 'INR',
+        keyId: keyId || 'rzp_test_mockKey',
         mockMode: true
       });
     }
   } catch (error) {
-    console.error('Error creating Razorpay order:', error);
-    return res.status(500).json({ message: 'Error initiating online payment order' });
+    console.error('[RAZORPAY_CREATE_ERROR] Error creating Razorpay order:', error);
+    return res.status(500).json({ success: false, message: 'Error initiating online payment order' });
   }
 };
 
-// Verify Payment Signature & Create Order
+// Verify Payment Signature & Create / Update Order
 const verifyPayment = async (req, res) => {
   try {
     const {
@@ -72,65 +79,133 @@ const verifyPayment = async (req, res) => {
       orderData
     } = req.body;
 
+    console.log('[PAYMENT_VERIFY_REQUEST] Processing payment verification:', {
+      razorpayOrderId,
+      razorpayPaymentId,
+      hasSignature: Boolean(razorpaySignature),
+      hasOrderData: Boolean(orderData)
+    });
+
     if (!razorpayOrderId || !razorpayPaymentId) {
-      return res.status(400).json({ message: 'Missing Razorpay order/payment reference details' });
+      console.error('[PAYMENT_VERIFY_ERROR] Missing razorpayOrderId or razorpayPaymentId');
+      return res.status(400).json({
+        success: false,
+        message: 'Missing Razorpay order or payment reference ID'
+      });
     }
 
     let isSignatureValid = false;
 
     if (razorpay) {
       if (!razorpaySignature) {
-        return res.status(400).json({ message: 'Signature is required for verification' });
+        console.error('[PAYMENT_VERIFY_ERROR] Missing razorpaySignature in production mode');
+        return res.status(400).json({
+          success: false,
+          message: 'Razorpay payment signature is required for verification'
+        });
       }
-      const text = razorpayOrderId + '|' + razorpayPaymentId;
+
+      const text = `${razorpayOrderId}|${razorpayPaymentId}`;
       const generated_signature = crypto
-        .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
+        .createHmac('sha256', keySecret)
         .update(text)
         .digest('hex');
+
       isSignatureValid = (generated_signature === razorpaySignature);
+
+      if (!isSignatureValid) {
+        console.error('[PAYMENT_VERIFY_ERROR] Signature mismatch!', {
+          generated_signature,
+          received_signature: razorpaySignature,
+          razorpayOrderId,
+          razorpayPaymentId
+        });
+      } else {
+        console.log('[PAYMENT_VERIFY_SUCCESS] Signature verified successfully for Razorpay order:', razorpayOrderId);
+      }
     } else {
-      isSignatureValid = razorpayOrderId.startsWith('order_mock_');
+      // Mock mode validation for local development
+      isSignatureValid = Boolean(
+        razorpayOrderId.startsWith('order_mock_') ||
+        razorpayOrderId.startsWith('order_') ||
+        razorpayOrderId.startsWith('BLC-') ||
+        razorpaySignature === 'mock_signature'
+      );
+      console.log('[PAYMENT_VERIFY_MOCK] Signature status in mock mode:', isSignatureValid);
     }
 
     if (!isSignatureValid) {
-      return res.status(400).json({ message: 'Payment verification failed' });
+      return res.status(400).json({
+        success: false,
+        message: 'Payment verification failed: Signature mismatch'
+      });
     }
 
     const userId = req.user.id || req.user._id;
 
-    // Check if the order already exists (Retry Payment flow!)
+    // Check if an order draft already exists in MongoDB
     const existingOrder = await Order.findOne({ razorpayOrderId });
 
     if (existingOrder) {
-      existingOrder.paymentStatus = 'Paid';
-      existingOrder.razorpayPaymentId = razorpayPaymentId;
-      existingOrder.razorpaySignature = razorpaySignature || 'mock_signature';
-      await existingOrder.save();
+      if (existingOrder.paymentStatus !== 'Paid') {
+        // Deduct inventory stock if not already deducted
+        const cartItems = await Cart.find({ userId });
+        for (const item of cartItems) {
+          let product = null;
+          if (mongoose.Types.ObjectId.isValid(item.productId)) {
+            product = await Product.findById(item.productId);
+          }
+          if (!product) {
+            product = await Product.findOne({ _id: item.productId });
+          }
+          if (product) {
+            product.stock = Math.max(0, Number(product.stock) - Number(item.quantity));
+            await product.save();
+          }
+        }
 
-      console.log(`Prepaid order #${existingOrder._id} successfully updated on retry pay verification.`);
+        existingOrder.paymentStatus = 'Paid';
+        existingOrder.orderStatus = 'Order Confirmed';
+        existingOrder.razorpayPaymentId = razorpayPaymentId;
+        existingOrder.razorpaySignature = razorpaySignature || 'mock_signature';
+        await existingOrder.save();
 
-      const transitioned = await transitionOrderStatus(existingOrder._id, 'Order Confirmed', 'System', 'Prepaid payment verified successfully (Payment Retry)');
+        console.log(`[PAYMENT_VERIFY_SUCCESS] Existing Order #${existingOrder._id} marked as Paid and Confirmed.`);
 
-      await Cart.deleteMany({ userId });
+        await transitionOrderStatus(existingOrder._id, 'Order Confirmed', 'System', 'Prepaid payment verified successfully');
+        await Cart.deleteMany({ userId });
+      }
 
-      const resObj = (transitioned || existingOrder).toObject();
+      const resObj = existingOrder.toObject();
       resObj.id = resObj._id;
-      return res.status(200).json(resObj);
+
+      return res.status(200).json({
+        success: true,
+        message: 'Payment verified and order updated successfully',
+        order: resObj
+      });
     }
 
-    // Process fresh order creation
+    // Fresh Order Creation after Verified Payment Signature
     const {
-      fullName, email, mobile, address, city, state, zip,
-      shippingCharges
+      fullName, email, mobile, address, city, state, zip
     } = orderData || {};
 
     if (!fullName || !email || !mobile || !address || !city || !state || !zip) {
-      return res.status(400).json({ message: 'Please provide all shipping and contact details' });
+      console.error('[PAYMENT_VERIFY_ERROR] Missing shipping details in orderData:', orderData);
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide all shipping and contact details'
+      });
     }
 
     const userCart = await Cart.find({ userId });
     if (userCart.length === 0) {
-      return res.status(400).json({ message: 'Your cart is empty' });
+      console.error('[PAYMENT_VERIFY_ERROR] Cart is empty for user:', userId);
+      return res.status(400).json({
+        success: false,
+        message: 'Your shopping cart is empty'
+      });
     }
 
     const orderItems = [];
@@ -145,11 +220,20 @@ const verifyPayment = async (req, res) => {
         product = await Product.findOne({ _id: item.productId });
       }
       if (!product) {
-        return res.status(404).json({ message: 'Product not found' });
+        console.error('[PAYMENT_VERIFY_ERROR] Product not found for ID:', item.productId);
+        return res.status(404).json({
+          success: false,
+          message: 'One or more products in your cart were not found'
+        });
       }
+
       const qty = Number(item.quantity);
       if (Number(product.stock) < qty) {
-        return res.status(400).json({ message: `Insufficient stock for ${product.name}` });
+        console.error(`[PAYMENT_VERIFY_ERROR] Insufficient stock for ${product.name}. Stock: ${product.stock}, Req: ${qty}`);
+        return res.status(400).json({
+          success: false,
+          message: `Insufficient stock for ${product.name}`
+        });
       }
 
       const itemPrice = product.discountPrice ? Number(product.discountPrice) : Number(product.price);
@@ -169,7 +253,7 @@ const verifyPayment = async (req, res) => {
 
     const totalAmount = subtotal;
 
-    // Deduct stock
+    // Deduct stock in Product documents
     for (const item of userCart) {
       let product = null;
       if (mongoose.Types.ObjectId.isValid(item.productId)) {
@@ -184,6 +268,7 @@ const verifyPayment = async (req, res) => {
       }
     }
 
+    // Save order to MongoDB after verified payment
     const order = await Order.create({
       userId,
       fullName,
@@ -200,23 +285,39 @@ const verifyPayment = async (req, res) => {
       deliveryCharge: 0,
       couponCode: '',
       items: orderItems,
-      orderStatus: 'Pending',
+      orderStatus: 'Order Confirmed',
       razorpayOrderId,
       razorpayPaymentId,
       razorpaySignature: razorpaySignature || 'mock_signature'
     });
 
+    console.log(`[PAYMENT_VERIFY_SUCCESS] Order #${order._id} created and saved to MongoDB.`);
+
+    // Clear cart after order is successfully placed
     await Cart.deleteMany({ userId });
-    await logOrderStatusHistory(order._id, '', 'Pending', 'System', 'Order placed successfully (prepaid payment pending)');
+    await logOrderStatusHistory(order._id, '', 'Order Confirmed', 'System', 'Prepaid payment verified and order created');
 
-    const transitionedOrder = await transitionOrderStatus(order._id, 'Order Confirmed', 'System', 'Prepaid payment verified successfully');
+    try {
+      await sendOrderStatusEmail(order, 'Order Confirmed');
+    } catch (mailErr) {
+      console.error('[MAIL_ERROR] Order confirmation email notification failed:', mailErr.message);
+    }
 
-    const resObj = (transitionedOrder || order).toObject();
+    const resObj = order.toObject();
     resObj.id = resObj._id;
-    return res.status(201).json(resObj);
+
+    return res.status(201).json({
+      success: true,
+      message: 'Payment verified and order created successfully',
+      order: resObj
+    });
+
   } catch (error) {
-    console.error('Error verifying payment:', error);
-    return res.status(500).json({ message: 'Verification error placing order' });
+    console.error('[PAYMENT_VERIFY_CRITICAL_ERROR] Exception in verifyPayment:', error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Server error processing payment verification'
+    });
   }
 };
 
@@ -233,15 +334,15 @@ const refundPayment = async (req, res) => {
     }
 
     if (!order) {
-      return res.status(404).json({ message: 'Order not found' });
+      return res.status(404).json({ success: false, message: 'Order not found' });
     }
 
     if (order.paymentMethod !== 'Razorpay') {
-      return res.status(400).json({ message: 'Only prepaid online orders can be refunded' });
+      return res.status(400).json({ success: false, message: 'Only prepaid online orders can be refunded' });
     }
 
     if (order.paymentStatus === 'Refunded') {
-      return res.status(400).json({ message: 'Order payment is already refunded' });
+      return res.status(400).json({ success: false, message: 'Order payment is already refunded' });
     }
 
     const amountInPaise = Math.round(Number(order.totalAmount) * 100);
@@ -287,10 +388,10 @@ const refundPayment = async (req, res) => {
 
     const resObj = order.toObject();
     resObj.id = resObj._id;
-    return res.json({ message: 'Payment successfully refunded', order: resObj });
+    return res.json({ success: true, message: 'Payment successfully refunded', order: resObj });
   } catch (error) {
     console.error('Error processing refund:', error);
-    return res.status(500).json({ message: error.message || 'Server error processing refund' });
+    return res.status(500).json({ success: false, message: error.message || 'Server error processing refund' });
   }
 };
 
@@ -299,7 +400,7 @@ const retryRazorpayOrder = async (req, res) => {
   try {
     const { orderId } = req.body;
     if (!orderId) {
-      return res.status(400).json({ message: 'Order ID is required' });
+      return res.status(400).json({ success: false, message: 'Order ID is required' });
     }
 
     let order = null;
@@ -311,12 +412,12 @@ const retryRazorpayOrder = async (req, res) => {
     }
 
     if (!order) {
-      return res.status(404).json({ message: 'Order not found' });
+      return res.status(404).json({ success: false, message: 'Order not found' });
     }
 
     const userId = req.user.id || req.user._id;
     if (String(order.userId) !== String(userId)) {
-      return res.status(403).json({ message: 'Not authorized to retry this order' });
+      return res.status(403).json({ success: false, message: 'Not authorized to retry this order' });
     }
 
     const amountInPaise = Math.round(Number(order.totalAmount) * 100);
@@ -337,6 +438,7 @@ const retryRazorpayOrder = async (req, res) => {
         orderId: rzOrder.id,
         amount: rzOrder.amount,
         currency: rzOrder.currency,
+        keyId,
         mockMode: false
       });
     } else {
@@ -350,12 +452,13 @@ const retryRazorpayOrder = async (req, res) => {
         orderId: mockOrderId,
         amount: amountInPaise,
         currency: 'INR',
+        keyId: keyId || 'rzp_test_mockKey',
         mockMode: true
       });
     }
   } catch (error) {
     console.error('Error retrying payment order:', error);
-    return res.status(500).json({ message: 'Error retrying payment order' });
+    return res.status(500).json({ success: false, message: 'Error retrying payment order' });
   }
 };
 

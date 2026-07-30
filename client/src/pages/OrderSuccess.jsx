@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, useLocation, Link } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import axios from 'axios';
 import { formatDirectPrice } from '../utils/currency';
@@ -8,14 +8,21 @@ import { Check, ShieldCheck, Mail, ArrowRight, ShoppingBag } from 'lucide-react'
 
 const OrderSuccess = () => {
   const { id } = useParams();
+  const location = useLocation();
+  const stateOrder = location.state?.order;
   const token = useSelector((state) => state.auth.token);
-  const [order, setOrder] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [order, setOrder] = useState(stateOrder || null);
+  const [loading, setLoading] = useState(!stateOrder);
 
   useEffect(() => {
     const fetchOrderDetails = async () => {
       try {
-        const res = await axios.get(`${API_URL}/orders/${id}`, {
+        const targetId = id || stateOrder?._id || stateOrder?.id;
+        if (!targetId) {
+          setLoading(false);
+          return;
+        }
+        const res = await axios.get(`${API_URL}/orders/${targetId}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         setOrder(res.data);
@@ -26,8 +33,10 @@ const OrderSuccess = () => {
       }
     };
 
-    if (id && token) {
+    if (token && (!order || id)) {
       fetchOrderDetails();
+    } else {
+      setLoading(false);
     }
   }, [id, token]);
 
@@ -51,12 +60,12 @@ const OrderSuccess = () => {
             Thank You for Your Order
           </h1>
           <p className="text-xs text-neutral-500 font-medium uppercase tracking-wider">
-            Order Reference: <span className="font-mono text-neutral-700 dark:text-neutral-300">#BLC-2026-{id}</span>
+            Order Reference: <span className="font-mono text-neutral-700 dark:text-neutral-300">#BLC-2026-{id || order?._id || order?.id || 'SUCCESS'}</span>
           </p>
         </div>
 
         <p className="text-sm text-neutral-500 max-w-md mx-auto leading-relaxed">
-          Your payment has been simulated successfully. An automated invoice receipt and insurance guarantee card have been prepared for shipment.
+          Your payment has been verified successfully. An automated digital invoice receipt and insurance guarantee card have been prepared for shipment.
         </p>
 
         {loading ? (

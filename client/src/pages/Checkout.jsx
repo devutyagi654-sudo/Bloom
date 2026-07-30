@@ -74,7 +74,6 @@ const Checkout = () => {
       return;
     }
 
-    // Online Payment (Razorpay Checkout)
     try {
       const orderPayload = {
         fullName,
@@ -89,7 +88,7 @@ const Checkout = () => {
         deliveryCharge: 0
       };
 
-      // 1. Create stashed Razorpay order draft on backend
+      // 1. Create order draft on backend
       const orderRes = await axios.post(
         `${API_URL}/orders`,
         orderPayload,
@@ -97,24 +96,28 @@ const Checkout = () => {
       );
 
       const orderData = orderRes.data;
+      const rzOrderId = orderData.razorpayOrderId || orderData.id || orderData._id;
 
       if (orderData.mockMode) {
-        // Simulated payment confirm
+        // Simulated payment confirmation in mock mode
         const confirmPayment = window.confirm("BLC Sandbox Gateway: Press OK to simulate a successful Razorpay online transaction.");
         if (confirmPayment) {
           const verifyRes = await axios.post(
             `${API_URL}/payment/verify`,
             {
-              razorpayOrderId: orderData.razorpayOrderId,
+              razorpayOrderId: rzOrderId,
               razorpayPaymentId: `pay_mock_${Math.random().toString(36).substring(2, 11)}`,
               razorpaySignature: 'mock_signature',
               orderData: orderPayload
             },
             { headers: { Authorization: `Bearer ${token}` } }
           );
-          
+
+          const createdOrder = verifyRes.data.order || verifyRes.data;
+          const targetId = createdOrder._id || createdOrder.id;
+
           dispatch(clearCart());
-          navigate('/order-success', { state: { order: verifyRes.data.order } });
+          navigate(`/order-success/${targetId}`, { state: { order: createdOrder } });
         } else {
           setError('Payment cancelled by user');
         }
@@ -124,13 +127,13 @@ const Checkout = () => {
 
       // 2. Real Razorpay Checkout Modal
       const options = {
-        key: orderData.keyId,
+        key: orderData.keyId || import.meta.env.VITE_RAZORPAY_KEY_ID,
         amount: orderData.amount,
         currency: orderData.currency || 'INR',
         name: 'bloomluxecollection',
-        description: 'Luxury Atelier Checkout',
+        description: 'Luxury Jewelry & Timepieces Checkout',
         image: 'https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=120&auto=format&fit=crop&q=80',
-        order_id: orderData.razorpayOrderId,
+        order_id: rzOrderId,
         handler: async function (response) {
           try {
             const verifyRes = await axios.post(
@@ -144,10 +147,18 @@ const Checkout = () => {
               { headers: { Authorization: `Bearer ${token}` } }
             );
 
-            dispatch(clearCart());
-            navigate('/order-success', { state: { order: verifyRes.data.order } });
+            if (verifyRes.data.success || verifyRes.status === 200 || verifyRes.status === 201) {
+              const createdOrder = verifyRes.data.order || verifyRes.data;
+              const targetId = createdOrder._id || createdOrder.id;
+
+              dispatch(clearCart());
+              navigate(`/order-success/${targetId}`, { state: { order: createdOrder } });
+            } else {
+              setError(verifyRes.data.message || 'Payment verification failed');
+            }
           } catch (err) {
-            setError(err.response?.data?.message || 'Payment verification failed');
+            console.error('[PAYMENT_VERIFICATION_FAILED]', err);
+            setError(err.response?.data?.message || 'Payment verification failed. Please contact support.');
           } finally {
             setSubmitting(false);
           }
@@ -169,12 +180,13 @@ const Checkout = () => {
 
       const razorpayInstance = new window.Razorpay(options);
       razorpayInstance.on('payment.failed', function (response) {
-        setError(response.error.description || 'Payment Failed');
+        setError(response.error?.description || 'Payment Failed');
         setSubmitting(false);
       });
       razorpayInstance.open();
 
     } catch (err) {
+      console.error('[CHECKOUT_ERROR]', err);
       setError(err.response?.data?.message || 'Failed to initiate Razorpay checkout');
       setSubmitting(false);
     }

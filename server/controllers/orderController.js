@@ -255,21 +255,6 @@ const createOrder = async (req, res) => {
     const deliveryCharge = 0;
     const totalAmount = subtotal;
     
-    // Deduct stock in Product documents
-    for (const item of userCart) {
-      let product = null;
-      if (mongoose.Types.ObjectId.isValid(item.productId)) {
-        product = await Product.findById(item.productId);
-      }
-      if (!product) {
-        product = await Product.findOne({ _id: item.productId });
-      }
-      if (product) {
-        product.stock = Math.max(0, Number(product.stock) - Number(item.quantity));
-        await product.save();
-      }
-    }
-    
     let rzOrderId = '';
     let mockMode = true;
     const amountInPaise = Math.round(Number(totalAmount) * 100);
@@ -318,6 +303,8 @@ const createOrder = async (req, res) => {
 
     return res.status(201).json({
       ...orderObj,
+      razorpayOrderId: rzOrderId,
+      keyId: process.env.RAZORPAY_KEY_ID || 'rzp_test_mockKey',
       mockMode,
       amount: amountInPaise,
       currency: 'INR'
