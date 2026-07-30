@@ -196,7 +196,8 @@ const Checkout = () => {
 
     } catch (err) {
       console.error('[CHECKOUT_ERROR]', err);
-      setError(err.response?.data?.message || 'Failed to initiate Razorpay checkout');
+      const errMsg = err.response?.data?.message || err.response?.data?.error || err.message || 'Failed to initiate Razorpay checkout';
+      setError(errMsg);
       setSubmitting(false);
     }
   };

@@ -65,15 +65,16 @@ const createRazorpayOrder = async (req, res) => {
     }
   } catch (error) {
     console.error("========== RAZORPAY CREATE ERROR ==========");
-    console.error(error);
-    console.error("Message:", error.message);
-    console.error("Status:", error.statusCode);
-    console.error("Response:", error.error || error.response?.data);
+    console.error("Status Code:", error.statusCode);
+    console.error("Error Details:", error.error || error.message);
+
+    const rzMsg = error.error?.description || error.message || 'Authentication failed on Razorpay';
 
     return res.status(500).json({
       success: false,
-      message: "Razorpay order creation failed",
-      error: error.message || error
+      message: `Razorpay order creation failed: ${rzMsg}. Please check RAZORPAY_KEY_ID & RAZORPAY_KEY_SECRET credentials on Render / Dashboard.`,
+      error: rzMsg,
+      statusCode: error.statusCode
     });
   }
 };

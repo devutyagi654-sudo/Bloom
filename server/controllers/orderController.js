@@ -269,16 +269,17 @@ const createOrder = async (req, res) => {
         rzOrderId = rzOrder.id;
         mockMode = false;
       } catch (rzErr) {
-        console.error("========== RAZORPAY ERROR ==========");
-        console.error(rzErr);
-        console.error("Message:", rzErr.message);
-        console.error("Status:", rzErr.statusCode);
-        console.error("Response:", rzErr.error || rzErr.response?.data);
+        console.error("========== RAZORPAY API ERROR ==========");
+        console.error("Status Code:", rzErr.statusCode);
+        console.error("Error Details:", rzErr.error || rzErr.message);
+
+        const rzMsg = rzErr.error?.description || rzErr.message || 'Authentication failed on Razorpay';
 
         return res.status(500).json({
           success: false,
-          message: "Razorpay order creation failed",
-          error: rzErr.message || rzErr
+          message: `Razorpay order creation failed: ${rzMsg}. Please check RAZORPAY_KEY_ID & RAZORPAY_KEY_SECRET credentials on Render / Dashboard.`,
+          error: rzMsg,
+          statusCode: rzErr.statusCode
         });
       }
     } else {
