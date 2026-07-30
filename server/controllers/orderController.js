@@ -269,10 +269,20 @@ const createOrder = async (req, res) => {
         rzOrderId = rzOrder.id;
         mockMode = false;
       } catch (rzErr) {
-        console.error('Razorpay SDK failed generating order draft:', rzErr.message);
-        rzOrderId = `order_mock_${Math.random().toString(36).substring(2, 11)}`;
+        console.error("========== RAZORPAY ERROR ==========");
+        console.error(rzErr);
+        console.error("Message:", rzErr.message);
+        console.error("Status:", rzErr.statusCode);
+        console.error("Response:", rzErr.error || rzErr.response?.data);
+
+        return res.status(500).json({
+          success: false,
+          message: "Razorpay order creation failed",
+          error: rzErr.message || rzErr
+        });
       }
     } else {
+      console.warn("[RAZORPAY_WARNING] RAZORPAY_KEY_ID or RAZORPAY_KEY_SECRET missing in environment. Falling back to mock order ID.");
       rzOrderId = `order_mock_${Math.random().toString(36).substring(2, 11)}`;
     }
 

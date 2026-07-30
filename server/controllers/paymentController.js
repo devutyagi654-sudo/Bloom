@@ -64,8 +64,17 @@ const createRazorpayOrder = async (req, res) => {
       });
     }
   } catch (error) {
-    console.error('[RAZORPAY_CREATE_ERROR] Error creating Razorpay order:', error);
-    return res.status(500).json({ success: false, message: 'Error initiating online payment order' });
+    console.error("========== RAZORPAY CREATE ERROR ==========");
+    console.error(error);
+    console.error("Message:", error.message);
+    console.error("Status:", error.statusCode);
+    console.error("Response:", error.error || error.response?.data);
+
+    return res.status(500).json({
+      success: false,
+      message: "Razorpay order creation failed",
+      error: error.message || error
+    });
   }
 };
 

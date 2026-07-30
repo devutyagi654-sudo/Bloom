@@ -267,6 +267,11 @@ connectDB()
     
     app.listen(PORT, () => {
       console.log(`Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
+      console.log("===================================");
+      console.log("RAZORPAY CONFIG CHECK:");
+      console.log("KEY_ID:", process.env.RAZORPAY_KEY_ID);
+      console.log("SECRET FOUND:", !!process.env.RAZORPAY_KEY_SECRET);
+      console.log("===================================");
       startProgressionService();
     });
   })
