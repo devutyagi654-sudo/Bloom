@@ -9,7 +9,7 @@ import ReviewSection from '../components/Product/ReviewSection';
 import ProductCard from '../components/Product/ProductCard';
 import { toggleWishlist, fetchWishlist, isProductInWishlist } from '../redux/wishlistSlice';
 import { addToCart, fetchCart } from '../redux/cartSlice';
-import { Star, Heart, ShoppingCart, ShieldCheck, Gem, Sparkles, AlertCircle } from 'lucide-react';
+import { Star, Heart, ShoppingCart, ShieldCheck, Gem, Sparkles, AlertCircle, Zap } from 'lucide-react';
 
 const ProductDetail = () => {
   const { id } = useParams();
@@ -89,6 +89,32 @@ const ProductDetail = () => {
       setTimeout(() => setCartSuccess(''), 3000);
     } catch (err) {
       setCartSuccess(err || 'Failed to add to cart');
+    }
+  };
+
+  const [buyNowLoading, setBuyNowLoading] = useState(false);
+
+  const handleBuyNow = async () => {
+    if (!isAuthenticated) {
+      navigate('/login');
+      return;
+    }
+    if (!product || Number(product.stock) <= 0) return;
+
+    if (isBanglesCategory(product) && !selectedSize) {
+      setCartSuccess('Please select a bangle size.');
+      return;
+    }
+    
+    setCartSuccess('');
+    setBuyNowLoading(true);
+    try {
+      await dispatch(addToCart({ productId: id, quantity, selectedSize })).unwrap();
+      dispatch(fetchCart());
+      navigate('/checkout');
+    } catch (err) {
+      setCartSuccess(err || 'Failed to process Buy Now');
+      setBuyNowLoading(false);
     }
   };
 
@@ -284,45 +310,71 @@ const ProductDetail = () => {
               </div>
             </div>
 
-            {/* Add to cart / quantity selector controls */}
+            {/* Add to cart / quantity selector / wishlist / Buy Now controls */}
             {Number(product.stock) > 0 && (
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center space-y-4 sm:space-y-0 sm:space-x-4 pt-2">
+              <div className="space-y-3 pt-2">
                 
-                {/* Quantity selection */}
-                <div className="flex border border-neutral-300 dark:border-neutral-800 rounded-xl bg-white dark:bg-neutral-900 overflow-hidden self-start">
-                  <button
-                    onClick={() => setQuantity(q => Math.max(1, q - 1))}
-                    className="px-4 py-2.5 text-lg font-bold hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
-                  >
-                    -
-                  </button>
-                  <span className="px-4 py-2.5 flex items-center font-bold text-sm w-12 justify-center">
-                    {quantity}
-                  </span>
-                  <button
-                    onClick={() => setQuantity(q => Math.min(Number(product.stock), q + 1))}
-                    className="px-4 py-2.5 text-lg font-bold hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
-                  >
-                    +
-                  </button>
+                {/* Top Row: Quantity Selector & Add to Cart + Wishlist Row */}
+                <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                  
+                  {/* Quantity selection */}
+                  <div className="flex border border-neutral-300 dark:border-neutral-800 rounded-xl bg-white dark:bg-neutral-900 overflow-hidden self-start sm:self-auto h-12 flex-shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => setQuantity(q => Math.max(1, q - 1))}
+                      className="px-3.5 py-2 text-lg font-bold hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-neutral-800 dark:text-neutral-200"
+                    >
+                      -
+                    </button>
+                    <span className="px-3.5 py-2 flex items-center font-bold text-sm w-11 justify-center text-neutral-800 dark:text-neutral-200">
+                      {quantity}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setQuantity(q => Math.min(Number(product.stock), q + 1))}
+                      className="px-3.5 py-2 text-lg font-bold hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-neutral-800 dark:text-neutral-200"
+                    >
+                      +
+                    </button>
+                  </div>
+
+                  {/* Add to Cart + Wishlist flex row (always in SAME ROW on mobile and desktop) */}
+                  <div className="flex flex-row items-center gap-2.5 sm:gap-3 flex-nowrap flex-1 w-full">
+                    {/* Add to Cart button */}
+                    <button
+                      type="button"
+                      onClick={handleAddToCart}
+                      className="flex-1 h-12 flex items-center justify-center space-x-2 bg-gradient-to-r from-luxury-gold-600 to-luxury-gold-500 hover:from-luxury-gold-500 hover:to-luxury-gold-400 text-black font-bold text-xs tracking-widest uppercase rounded-xl shadow-md hover:shadow-lg transition-all duration-200"
+                    >
+                      <ShoppingCart className="w-4 h-4 flex-shrink-0" />
+                      <span className="truncate">Add to Cart</span>
+                    </button>
+
+                    {/* Wishlist toggle button (Fixed width 52px-56px, stays in same row) */}
+                    <button
+                      type="button"
+                      onClick={handleWishlistToggle}
+                      className="w-[52px] sm:w-[56px] h-12 flex-shrink-0 flex items-center justify-center border border-neutral-300 dark:border-neutral-800 rounded-xl bg-white dark:bg-neutral-900 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-neutral-700 dark:text-neutral-300 shadow-xs"
+                      title="Add to Wishlist"
+                    >
+                      <Heart className={`w-5 h-5 ${inWishlist ? 'fill-red-600 text-red-600' : ''}`} />
+                    </button>
+                  </div>
+
                 </div>
 
-                {/* Add to Cart button */}
-                <button
-                  onClick={handleAddToCart}
-                  className="flex-grow flex items-center justify-center space-x-2 bg-gradient-to-r from-luxury-gold-600 to-luxury-gold-500 hover:from-luxury-gold-500 hover:to-luxury-gold-400 text-black font-semibold text-xs tracking-widest uppercase py-3.5 px-8 rounded-xl shadow-lg transition-all"
-                >
-                  <ShoppingCart className="w-4 h-4" />
-                  <span>Add to Cart</span>
-                </button>
-
-                {/* Wishlist toggle */}
-                <button
-                  onClick={handleWishlistToggle}
-                  className="p-3.5 border border-neutral-300 dark:border-neutral-800 rounded-xl hover:bg-neutral-100 dark:hover:bg-neutral-900 transition-colors text-neutral-700 dark:text-neutral-300"
-                >
-                  <Heart className={`w-5 h-5 ${inWishlist ? 'fill-red-600 text-red-600' : ''}`} />
-                </button>
+                {/* Bottom Row: BUY NOW Button */}
+                <div>
+                  <button
+                    type="button"
+                    onClick={handleBuyNow}
+                    disabled={buyNowLoading}
+                    className="w-full h-12 flex items-center justify-center space-x-2 bg-black hover:bg-neutral-900 text-white dark:bg-neutral-900 dark:hover:bg-black font-bold text-xs tracking-widest uppercase rounded-xl shadow-md hover:shadow-xl hover:scale-[1.005] active:scale-[0.99] transition-all duration-200 border border-black/10 dark:border-neutral-800 disabled:opacity-50"
+                  >
+                    <Zap className="w-4 h-4 flex-shrink-0 text-luxury-gold-400" />
+                    <span>{buyNowLoading ? 'Processing...' : 'BUY NOW'}</span>
+                  </button>
+                </div>
 
               </div>
             )}
