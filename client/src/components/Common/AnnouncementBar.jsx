@@ -1,38 +1,43 @@
 import React from 'react';
 
 const AnnouncementBar = () => {
-  const text = "✨ FREE INSURED SHIPPING ON ORDERS OVER ₹43,000 • USE CODE LUXURY20 FOR 20% OFF ✨";
-  // Repeat the text to ensure it covers all screens and loops seamlessly
-  const repeatedText = `${text} \u00a0\u00a0\u00a0\u00a0 ${text} \u00a0\u00a0\u00a0\u00a0 ${text} \u00a0\u00a0\u00a0\u00a0 ${text}`;
+  const announcementText = "💍 ELEVATE YOUR ELEGANCE WITH BLOOM LUXE COLLECTION • ✨ FREE INSURED SHIPPING PAN INDIA • 💎 PREMIUM QUALITY GUARANTEED • 🔒 100% SECURE PAYMENTS";
 
   return (
     <>
       <style>{`
-        @keyframes marquee-ltr {
+        @keyframes marquee-scroll {
           0% {
-            transform: translateX(-50%);
-          }
-          100% {
             transform: translateX(0%);
           }
+          100% {
+            transform: translateX(-50%);
+          }
         }
-        .marquee-container {
+        .marquee-wrapper {
           display: flex;
           overflow: hidden;
           white-space: nowrap;
           width: 100%;
         }
-        .marquee-scrollable {
-          display: inline-block;
-          animation: marquee-ltr 24s linear infinite;
+        .marquee-content {
+          display: flex;
+          width: max-content;
+          animation: marquee-scroll 35s linear infinite;
         }
-        .marquee-scrollable:hover {
+        .marquee-content:hover {
           animation-play-state: paused;
         }
       `}</style>
-      <div className="bg-gradient-to-r from-luxury-gold-800 via-luxury-gold-500 to-luxury-gold-800 text-black py-2 text-[10px] sm:text-xs font-bold uppercase tracking-widest marquee-container select-none z-55 border-b border-luxury-gold-700 cursor-pointer">
-        <div className="marquee-scrollable">
-          <span>{repeatedText}</span>
+
+      <div className="bg-gradient-to-r from-luxury-gold-800 via-luxury-gold-500 to-luxury-gold-800 text-black py-2.5 text-[10px] sm:text-xs font-bold uppercase tracking-widest marquee-wrapper select-none z-55 border-b border-luxury-gold-700 cursor-pointer shadow-xs">
+        <div className="marquee-content">
+          <span className="px-4 flex items-center gap-4">
+            {announcementText} • {announcementText} •
+          </span>
+          <span className="px-4 flex items-center gap-4">
+            {announcementText} • {announcementText} •
+          </span>
         </div>
       </div>
     </>
