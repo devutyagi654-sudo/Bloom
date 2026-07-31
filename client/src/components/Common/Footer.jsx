@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { ShieldCheck, RefreshCw, Truck } from 'lucide-react';
+import { ShieldCheck, Award, Truck } from 'lucide-react';
 import blcLogo from '../../assets/blc-logo.png';
 
 const Footer = () => {
@@ -11,27 +11,33 @@ const Footer = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 border-b border-[#C98A63]/20 dark:border-[#C98A63]/15">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center md:text-left">
           <div className="flex flex-col items-center md:items-start space-y-2">
-            <div className="flex items-center space-x-3 text-luxury-gold-500 font-semibold uppercase tracking-widest text-sm">
-              <Truck className="w-5 h-5" />
-              <span>Complimentary Delivery</span>
+            <div className="flex items-center space-x-3 text-luxury-gold-500 font-semibold uppercase tracking-widest text-xs sm:text-sm">
+              <Truck className="w-5 h-5 text-[#C98A63]" />
+              <span>COMPLIMENTARY INSURED SHIPPING</span>
             </div>
-            <p className="text-xs text-[#4A3226]/70 dark:text-[#F7E8DF]/65">We offer secure, insured delivery worldwide on orders over ₹43,000.</p>
+            <p className="text-xs text-[#4A3226]/70 dark:text-[#F7E8DF]/65 leading-relaxed">
+              100% free &amp; fully insured Express delivery pan-India with real-time tracking on all orders.
+            </p>
           </div>
           
           <div className="flex flex-col items-center md:items-start space-y-2">
-            <div className="flex items-center space-x-3 text-luxury-gold-500 font-semibold uppercase tracking-widest text-sm">
-              <RefreshCw className="w-5 h-5" />
-              <span>Sartorial Returns</span>
+            <div className="flex items-center space-x-3 text-luxury-gold-500 font-semibold uppercase tracking-widest text-xs sm:text-sm">
+              <Award className="w-5 h-5 text-[#C98A63]" />
+              <span>HALLMARK CERTIFIED QUALITY</span>
             </div>
-            <p className="text-xs text-[#4A3226]/70 dark:text-[#F7E8DF]/65">Exchanges or returns within 14 days of purchase. Conditions apply.</p>
+            <p className="text-xs text-[#4A3226]/70 dark:text-[#F7E8DF]/65 leading-relaxed">
+              Every piece is meticulously handcrafted with premium perfection &amp; guaranteed authenticity.
+            </p>
           </div>
           
           <div className="flex flex-col items-center md:items-start space-y-2">
-            <div className="flex items-center space-x-3 text-luxury-gold-500 font-semibold uppercase tracking-widest text-sm">
-              <ShieldCheck className="w-5 h-5" />
-              <span>Lifetime Authenticity</span>
+            <div className="flex items-center space-x-3 text-luxury-gold-500 font-semibold uppercase tracking-widest text-xs sm:text-sm">
+              <ShieldCheck className="w-5 h-5 text-[#C98A63]" />
+              <span>100% SECURE &amp; AUTHENTIC</span>
             </div>
-            <p className="text-xs text-[#4A3226]/70 dark:text-[#F7E8DF]/65">Every piece is certified authentic and comes with a luxury guarantee card.</p>
+            <p className="text-xs text-[#4A3226]/70 dark:text-[#F7E8DF]/65 leading-relaxed">
+              End-to-end encrypted transactions with official invoice receipt &amp; luxury guarantee card.
+            </p>
           </div>
         </div>
       </div>
