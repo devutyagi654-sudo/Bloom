@@ -645,38 +645,27 @@ const Navbar = () => {
               </button>
 
               <div className="flex items-center space-x-3 text-luxury-gold-600 dark:text-luxury-gold-400">
-                <h3 className="font-playfair text-2xl font-bold tracking-wide">bloomluxecollection Showroom Locator</h3>
+                <h3 className="font-playfair text-2xl font-bold tracking-wide">Bloom Luxe Official Store</h3>
               </div>
 
               <p className="text-xs text-neutral-500 leading-relaxed uppercase tracking-wider font-semibold">
-                Visit our luxury showrooms to explore conflict-free solitaire collections and custom design suites.
+                Visit our luxury flagship boutique or get in touch for personalized haute joaillerie consultations.
               </p>
 
-              <div className="space-y-4 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar border-t border-neutral-100 dark:border-neutral-900 pt-4">
-                <div className="border-b border-neutral-100 dark:border-neutral-900 pb-3">
-                  <span className="text-xs font-bold text-neutral-800 dark:text-neutral-200 uppercase tracking-widest">Mumbai Showroom</span>
-                  <p className="text-xs text-neutral-500 mt-1">Colaba Causeway, Apollo Bandar, Colaba, Mumbai, MH 400001</p>
-                  <p className="text-[10px] text-neutral-455 mt-0.5">📞 +91 22 4589 1200 • Mon - Sun: 11 AM - 8 PM</p>
-                </div>
-                <div className="border-b border-neutral-100 dark:border-neutral-900 pb-3">
-                  <span className="text-xs font-bold text-neutral-800 dark:text-neutral-200 uppercase tracking-widest">Headquarters Atelier & Boutique</span>
-                  <p className="text-xs text-neutral-500 mt-1">C-242, Harsh Vihar, Hari Nagar, Jaitpur, Badarpur, New Delhi – 110044</p>
-                  <p className="text-[10px] text-neutral-455 mt-0.5">✉️ bloomluxe.support@gmail.com • Mon - Sun: 10 AM - 8 PM</p>
-                </div>
-                <div className="border-b border-neutral-100 dark:border-neutral-900 pb-3">
-                  <span className="text-xs font-bold text-neutral-800 dark:text-neutral-200 uppercase tracking-widest">Bengaluru Atelier</span>
-                  <p className="text-xs text-neutral-500 mt-1">100 Feet Rd, Hal 2nd Stage, Indiranagar, Bengaluru, KA 560038</p>
-                  <p className="text-[10px] text-neutral-455 mt-0.5">📞 +91 80 2956 7800 • Tue - Sun: 10:30 AM - 7:30 PM</p>
-                </div>
-                <div className="border-b border-neutral-100 dark:border-neutral-900 pb-3">
-                  <span className="text-xs font-bold text-neutral-800 dark:text-neutral-200 uppercase tracking-widest">London Mayfair</span>
-                  <p className="text-xs text-neutral-500 mt-1">12 Bond Street, Mayfair, London, W1S 4PP, UK</p>
-                  <p className="text-[10px] text-neutral-455 mt-0.5">📞 +44 20 7946 0192 • Mon - Sat: 10 AM - 6 PM</p>
-                </div>
-                <div>
-                  <span className="text-xs font-bold text-neutral-800 dark:text-neutral-200 uppercase tracking-widest">New York Fifth Ave</span>
-                  <p className="text-xs text-neutral-500 mt-1">712 Fifth Avenue, Manhattan, New York, NY 10019, USA</p>
-                  <p className="text-[10px] text-neutral-455 mt-0.5">📞 +1 212 555 0148 • Mon - Sat: 10 AM - 7 PM</p>
+              <div className="border-t border-neutral-100 dark:border-neutral-900 pt-4">
+                <div className="bg-[#F4DDD2]/30 dark:bg-[#120a06]/40 p-5 rounded-2xl border border-[#C98A63]/25 space-y-2.5">
+                  <span className="text-xs font-bold text-[#C98A63] uppercase tracking-widest block">
+                    BLOOM LUXE FLAGSHIP BOUTIQUE
+                  </span>
+                  <p className="text-xs text-neutral-700 dark:text-neutral-300 leading-relaxed font-medium">
+                    C-242, Harsh Vihar, Hari Nagar, Jaitpur, Badarpur, New Delhi – 110044
+                  </p>
+                  <p className="text-xs text-neutral-600 dark:text-neutral-400 pt-1">
+                    ✉️ Email: <a href="mailto:bloomluxe.support@gmail.com" className="text-[#C98A63] hover:underline font-semibold">bloomluxe.support@gmail.com</a>
+                  </p>
+                  <p className="text-[11px] text-neutral-400 font-medium">
+                    🕒 Hours: Mon - Sun: 10 AM - 8 PM
+                  </p>
                 </div>
               </div>
             </motion.div>

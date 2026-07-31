@@ -66,7 +66,7 @@ const Contact = () => {
             <div className="flex items-start space-x-4">
               <MapPin className="w-5 h-5 text-luxury-gold-500 flex-shrink-0 mt-1" />
               <div>
-                <h5 className="font-semibold text-neutral-800 dark:text-neutral-200 text-sm">Headquarters Atelier</h5>
+                <h5 className="font-semibold text-neutral-800 dark:text-neutral-200 text-sm">Bloom Luxe Flagship Boutique</h5>
                 <p className="text-xs text-neutral-500 mt-1 leading-relaxed">
                   bloomluxecollection<br />
                   C-242, Harsh Vihar, Hari Nagar,<br />
