@@ -16,8 +16,8 @@ const HeroSlider = ({ customBanners }) => {
   const slides = (customBanners && Array.isArray(customBanners) && customBanners.length > 0)
     ? customBanners.map((cb, idx) => ({
         image: getFullUrl(cb.bannerPath),
-        title: idx === 0 ? 'Curated Luxury Collection' : idx === 1 ? 'Fine Diamond Atelier' : idx === 2 ? 'Signature Timepieces' : idx === 3 ? 'Exquisite Gold Bangles' : 'Heritage Masterworks',
-        subtitle: idx === 0 ? 'Exclusive Campaign' : idx === 1 ? 'Pure Elegance' : idx === 2 ? 'Heritage & Precision' : idx === 3 ? 'Exquisite Gold' : 'Modern Luxury',
+        title: idx === 0 ? 'Curated Luxury Collection' : idx === 1 ? 'Fine Jewellery Atelier' : idx === 2 ? 'Signature Timepieces' : idx === 3 ? 'Exquisite Bangles & Accessories' : 'Heritage Masterworks',
+        subtitle: idx === 0 ? 'Exclusive Campaign' : idx === 1 ? 'Pure Elegance' : idx === 2 ? 'Heritage & Precision' : idx === 3 ? 'Fashion Jewellery' : 'Modern Luxury',
         description: 'Explore our masterfully designed custom collections crafted just for you.',
         cta: 'Shop Collection',
         link: '/shop'

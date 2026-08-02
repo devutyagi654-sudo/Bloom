@@ -5,19 +5,19 @@ import { Plus, Minus, HelpCircle } from 'lucide-react';
 const FAQS = [
   {
     question: 'Why choose bloomluxecollection?',
-    answer: 'At bloomluxecollection, every single piece of jewelry and watch is handcrafted by artisans with a focus on details, minimal modern design, and lifetime authenticity. We use only premium conflict-free diamonds, certified 18k and 22k gold, and robust structural metals to ensure your jewelry is an investment for generations.'
+    answer: 'At bloomluxecollection, every single piece of fashion jewellery and accessory is thoughtfully curated with a focus on detail, modern style, and everyday comfort. We use premium skin-friendly materials and durable finishes to ensure stylish, long-lasting jewellery you will love.'
   },
   {
     question: 'What payment methods do you support?',
-    answer: 'We accept Cash on Delivery (COD) for domestic orders, all major Credit/Debit Cards (Visa, Mastercard, Amex), and instant UPI mobile payments. For premium items over ₹1,72,000, we recommend prepaid methods for expedited dispatch.'
+    answer: 'We accept Cash on Delivery (COD) for domestic orders, all major Credit/Debit Cards (Visa, Mastercard, Amex), and instant UPI mobile payments.'
   },
   {
     question: 'How long does shipping and delivery take?',
-    answer: 'Orders are processed within 24-48 hours. Domestic delivery takes 3-5 business days, while global insured courier shipping takes 5-10 business days. You will receive an automated tracking code immediately upon handover to our secure shipping partners.'
+    answer: 'Orders are processed within 24-48 hours. Domestic delivery takes 3-5 business days. You will receive an automated tracking code immediately upon handover to our secure shipping partners.'
   },
   {
     question: 'What is your returns and exchange policy?',
-    answer: 'We provide a 14-day hassle-free return or exchange policy on all unworn items in their original packaging, including the luxury gift box and certificate cards. Custom-engraved items or bespoke sizes are final sale.'
+    answer: 'We provide a 14-day hassle-free return or exchange policy on all unworn items in their original packaging, including the signature gift box. Custom-engraved items or bespoke sizes are final sale.'
   }
 ];
 

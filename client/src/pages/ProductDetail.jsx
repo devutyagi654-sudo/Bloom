@@ -9,7 +9,7 @@ import ReviewSection from '../components/Product/ReviewSection';
 import ProductCard from '../components/Product/ProductCard';
 import { toggleWishlist, fetchWishlist, isProductInWishlist } from '../redux/wishlistSlice';
 import { addToCart, fetchCart } from '../redux/cartSlice';
-import { Star, Heart, ShoppingCart, ShieldCheck, Gem, Sparkles, AlertCircle, Zap } from 'lucide-react';
+import { Star, Heart, ShoppingCart, ShieldCheck, Gem, Sparkles, AlertCircle, Zap, Award, Package } from 'lucide-react';
 
 const ProductDetail = () => {
   const { id } = useParams();
@@ -252,7 +252,7 @@ const ProductDetail = () => {
 
             {/* Description */}
             <p className="text-sm font-light text-neutral-600 dark:text-neutral-400 leading-relaxed">
-              {product.description || 'This beautifully designed luxury piece encapsulates the pure minimalism and sophisticated styling characteristics of bloomluxecollection. Handcrafted from top-grade metals and precious gems.'}
+              {product.description || 'This beautifully designed fashion jewellery piece encapsulates the modern aesthetics and style of bloomluxecollection. Crafted with skin-friendly materials and durable finishes for everyday wear.'}
             </p>
 
             {/* Size selection section for Bangles */}
@@ -297,16 +297,16 @@ const ProductDetail = () => {
             {/* Trust highlights banner */}
             <div className="bg-neutral-50 dark:bg-neutral-950 p-4 rounded-xl border border-neutral-100 dark:border-neutral-900 grid grid-cols-3 gap-4 text-center">
               <div className="flex flex-col items-center space-y-1">
+                <Award className="w-5 h-5 text-luxury-gold-500" />
+                <span className="text-[10px] uppercase font-bold tracking-widest text-neutral-600 dark:text-neutral-400">Premium Quality</span>
+              </div>
+              <div className="flex flex-col items-center space-y-1">
                 <ShieldCheck className="w-5 h-5 text-luxury-gold-500" />
-                <span className="text-[10px] uppercase font-bold tracking-widest text-neutral-600 dark:text-neutral-400">GIA Certified</span>
+                <span className="text-[10px] uppercase font-bold tracking-widest text-neutral-600 dark:text-neutral-400">Skin-Friendly Material</span>
               </div>
               <div className="flex flex-col items-center space-y-1">
-                <Gem className="w-5 h-5 text-luxury-gold-500" />
-                <span className="text-[10px] uppercase font-bold tracking-widest text-neutral-600 dark:text-neutral-400">18K Solid Gold</span>
-              </div>
-              <div className="flex flex-col items-center space-y-1">
-                <Sparkles className="w-5 h-5 text-luxury-gold-500" />
-                <span className="text-[10px] uppercase font-bold tracking-widest text-neutral-600 dark:text-neutral-400">Secured Box</span>
+                <Package className="w-5 h-5 text-luxury-gold-500" />
+                <span className="text-[10px] uppercase font-bold tracking-widest text-neutral-600 dark:text-neutral-400">Secure Packaging</span>
               </div>
             </div>
 

@@ -23,10 +23,10 @@ const Footer = () => {
           <div className="flex flex-col items-center md:items-start space-y-2">
             <div className="flex items-center space-x-3 text-luxury-gold-500 font-semibold uppercase tracking-widest text-xs sm:text-sm">
               <Award className="w-5 h-5 text-[#C98A63]" />
-              <span>HALLMARK CERTIFIED QUALITY</span>
+              <span>PREMIUM QUALITY</span>
             </div>
             <p className="text-xs text-[#4A3226]/70 dark:text-[#F7E8DF]/65 leading-relaxed">
-              Every piece is meticulously handcrafted with premium perfection &amp; guaranteed authenticity.
+              Every piece is crafted with skin-friendly materials and durable finishes.
             </p>
           </div>
           
@@ -36,7 +36,7 @@ const Footer = () => {
               <span>100% SECURE &amp; AUTHENTIC</span>
             </div>
             <p className="text-xs text-[#4A3226]/70 dark:text-[#F7E8DF]/65 leading-relaxed">
-              End-to-end encrypted transactions with official invoice receipt &amp; luxury guarantee card.
+              End-to-end encrypted transactions with official invoice receipt.
             </p>
           </div>
         </div>
@@ -52,7 +52,7 @@ const Footer = () => {
               <img src={blcLogo} alt="BLC Brand Logo" className="h-14 w-auto object-contain brightness-110" />
             </Link>
             <p className="text-sm leading-relaxed text-[#4A3226]/70 dark:text-[#F7E8DF]/60">
-              Handcrafting timeless luxury. We combine minimal modern aesthetics with precious metals and meticulous design to make you stand out.
+              Curating modern fashion jewellery. We combine minimal aesthetics with skin-friendly materials and meticulous design to elevate your style.
             </p>
             <div className="flex space-x-4">
               <a href="#" className="hover:text-luxury-gold-500 transition-colors">

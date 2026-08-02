@@ -7,7 +7,7 @@ import CategoriesMenu from '../components/Home/CategoriesMenu';
 import ProductCard from '../components/Product/ProductCard';
 import FAQ from '../components/Home/FAQ';
 import { motion } from 'framer-motion';
-import { Star, Mail, ArrowRight, ShieldCheck, Gem, Sparkles } from 'lucide-react';
+import { Star, Mail, ArrowRight, ShieldCheck, Gem, Sparkles, Award, Package } from 'lucide-react';
 import axios from 'axios';
 import API_URL from '../apiConfig';
 
@@ -207,22 +207,26 @@ const Home = () => {
 
           <div className="max-w-xl space-y-6">
             <span className="text-luxury-gold-400 font-bold uppercase tracking-widest text-xs flex items-center">
-              <Gem className="w-4 h-4 mr-1.5" /> Signature Craftsmanship
+              <Sparkles className="w-4 h-4 mr-1.5" /> Premium Fashion Jewellery
             </span>
             <h2 className="font-playfair text-3xl sm:text-4xl md:text-5xl text-white font-bold leading-tight">
-              A Symphony of Metals & Certitude
+              Exquisite Craftsmanship & Modern Style
             </h2>
             <p className="text-neutral-400 font-light text-sm sm:text-base leading-relaxed">
-              Every diamond at bloomluxecollection is individually inspected and sourced conflict-free. Certified GIA certificates accompany every ring, ensuring purity, longevity, and high investment metrics for our global collectors.
+              Every piece at bloomluxecollection is thoughtfully designed with skin-friendly materials, premium plating, and secure packaging to ensure long-lasting elegance and effortless daily wear.
             </p>
-            <div className="flex items-center space-x-6 text-neutral-300 text-xs tracking-wider uppercase font-semibold">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2 text-neutral-300 text-xs tracking-wider uppercase font-semibold">
               <div className="flex items-center">
-                <ShieldCheck className="w-4 h-4 text-luxury-gold-500 mr-2" />
-                <span>GIA Certified</span>
+                <Award className="w-4 h-4 text-luxury-gold-500 mr-2 flex-shrink-0" />
+                <span>Premium Quality</span>
               </div>
               <div className="flex items-center">
-                <ShieldCheck className="w-4 h-4 text-luxury-gold-500 mr-2" />
-                <span>18K White Gold</span>
+                <ShieldCheck className="w-4 h-4 text-luxury-gold-500 mr-2 flex-shrink-0" />
+                <span>Skin-Friendly Material</span>
+              </div>
+              <div className="flex items-center">
+                <Package className="w-4 h-4 text-luxury-gold-500 mr-2 flex-shrink-0" />
+                <span>Secure Packaging</span>
               </div>
             </div>
           </div>

@@ -53,7 +53,7 @@ async function seedDatabase() {
     );
     await Category.findOneAndUpdate(
       { name: { $regex: /^bracelets?$/i } },
-      { name: 'Bracelets', description: 'Sleek luxury gold, silver and diamond bracelets.', image: 'https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?w=600&auto=format&fit=crop&q=80' },
+      { name: 'Bracelets', description: 'Sleek fashion gold and silver finish bracelets.', image: 'https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?w=600&auto=format&fit=crop&q=80' },
       { upsert: true, new: true }
     );
 
@@ -78,17 +78,17 @@ async function seedDatabase() {
         },
         {
           name: 'Bracelets',
-          description: 'Sleek luxury gold, silver and diamond bracelets.',
+          description: 'Sleek fashion gold and silver finish bracelets.',
           image: 'https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?w=600&auto=format&fit=crop&q=80'
         },
         {
           name: 'Earrings',
-          description: 'Timeless diamond solitaires, gold studs, and elegant drops.',
+          description: 'Timeless solitaire studs, hoop earrings, and elegant drops.',
           image: 'https://images.unsplash.com/photo-1635767798638-3e25273a8236?w=600&auto=format&fit=crop&q=80'
         },
         {
           name: 'Rings',
-          description: 'Engagement bands, luxury solitaires, and custom rings.',
+          description: 'Statement bands, solitaire rings, and fashion rings.',
           image: 'https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=600&auto=format&fit=crop&q=80'
         },
         {
@@ -110,8 +110,8 @@ async function seedDatabase() {
     if (productCount === 0) {
       const defaultProducts = [
         {
-          name: 'Aura Diamond Solitaire Ring',
-          description: 'A classic 18k white gold band featuring an exquisite 1.5 carat round brilliant diamond with maximum brilliance.',
+          name: 'Aura Crystal Solitaire Ring',
+          description: 'A classic polished band featuring an exquisite solitaire crystal with maximum brilliance.',
           price: 2499,
           discountPrice: 1999,
           category: 'Rings',
@@ -130,7 +130,7 @@ async function seedDatabase() {
         },
         {
           name: 'Heavy Kashmiri Ghungroo Bangles',
-          description: 'Exquisitely handcrafted traditional bangles with micro-etched patterns and delicate silver bells (ghungroos). Plated in premium 22k gold.',
+          description: 'Exquisitely handcrafted traditional bangles with micro-etched patterns and delicate silver-toned bells (ghungroos). Gold finish.',
           price: 999,
           discountPrice: 550,
           category: 'Bangles',
@@ -149,7 +149,7 @@ async function seedDatabase() {
         },
         {
           name: 'Cascade Emerald Drop Earrings',
-          description: 'A striking pair of dangle earrings featuring pear-cut Colombian emeralds framed by brilliant micro-pave diamonds, set in 18k yellow gold.',
+          description: 'A striking pair of dangle earrings featuring pear-cut emerald-toned stones framed by brilliant micro-pave crystals.',
           price: 1599,
           discountPrice: 1399,
           category: 'Earrings',
@@ -166,8 +166,8 @@ async function seedDatabase() {
           reviews: []
         },
         {
-          name: 'Infinity Gold Pendant Necklace',
-          description: 'An elegant minimalist infinity-shaped gold wire frame adorned with micro-diamonds, hanging from a delicate 18k solid gold chain.',
+          name: 'Infinity Gold-Toned Pendant Necklace',
+          description: 'An elegant minimalist infinity-shaped wire frame adorned with micro-crystals, hanging from a delicate chain.',
           price: 890,
           discountPrice: 750,
           category: 'Hamper',

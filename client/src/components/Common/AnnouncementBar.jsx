@@ -1,7 +1,7 @@
 import React from 'react';
 
 const AnnouncementBar = () => {
-  const announcementText = "💍 ELEVATE YOUR ELEGANCE WITH BLOOM LUXE COLLECTION • ✨ FREE INSURED SHIPPING PAN INDIA • 💎 PREMIUM QUALITY GUARANTEED • 🔒 100% SECURE PAYMENTS";
+  const announcementText = "🚚 Free Shipping Across India | ✨ Premium Fashion Jewellery | 🔒 Secure Payments";
 
   return (
     <>
