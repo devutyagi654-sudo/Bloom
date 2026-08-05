@@ -186,7 +186,7 @@ const MyOrders = () => {
                   >
                     Download Invoice
                   </button>
-                  {['Pending', 'Confirmed', 'Packed'].includes(order.orderStatus) && (
+                  {['Pending', 'Confirmed', 'Order Confirmed', 'Processing', 'Ready to Ship', 'Packed'].includes(order.orderStatus) && (
                     <button
                       type="button"
                       onClick={() => handleCancelOrder(order.id)}
