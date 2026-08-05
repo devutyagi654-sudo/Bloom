@@ -27,12 +27,12 @@ const createShiprocketOrder = async (orderIdOrDoc) => {
       return null;
     }
 
-    // 1. Validate payment status: Only push confirmed prepaid orders (Paid)
-    // Do NOT push failed, cancelled, or unpaid pending orders
-    const isPaid = order.paymentStatus === 'Paid';
-    const isConfirmed = order.orderStatus === 'Order Confirmed' || order.orderStatus === 'Ready to Ship' || order.orderStatus === 'Processing';
+    // 1. Validate payment status: Allow Paid orders and COD orders (skip Cancelled/Failed)
+    const isCOD = order.paymentMethod === 'COD' || order.paymentMethod === 'Cash on Delivery';
+    const isPaidOrCOD = order.paymentStatus === 'Paid' || isCOD;
+    const isNotCancelled = order.orderStatus !== 'Cancelled' && order.orderStatus !== 'Failed';
 
-    if (!isPaid && !isConfirmed) {
+    if (!isPaidOrCOD || !isNotCancelled) {
       console.log(`[SHIPROCKET] Skipping order #${order._id}. Payment status: ${order.paymentStatus}, Order status: ${order.orderStatus}`);
       return null;
     }
@@ -67,11 +67,22 @@ const createShiprocketOrder = async (orderIdOrDoc) => {
         discount: 0
       }));
 
+      // Clean phone number for Shiprocket (Must be exact 10-digit number)
+      let cleanPhone = String(order.mobile || '').replace(/\D/g, '');
+      if (cleanPhone.startsWith('91') && cleanPhone.length === 12) {
+        cleanPhone = cleanPhone.substring(2);
+      } else if (cleanPhone.startsWith('0') && cleanPhone.length === 11) {
+        cleanPhone = cleanPhone.substring(1);
+      }
+      if (cleanPhone.length !== 10) {
+        cleanPhone = '9999999999';
+      }
+
       // Official Shiprocket Adhoc Order Payload
       const payload = {
         order_id: `BLC-${order._id}`,
         order_date: formattedOrderDate,
-        pickup_location: process.env.SHIPROCKET_PICKUP_LOCATION || "C-242 Harsh Vihar Badarpur",
+        pickup_location: process.env.SHIPROCKET_PICKUP_LOCATION || "Home",
         billing_customer_name: firstName,
         billing_last_name: lastName,
         billing_address: order.address || 'Address details',
@@ -80,13 +91,13 @@ const createShiprocketOrder = async (orderIdOrDoc) => {
         billing_state: order.state || 'Delhi',
         billing_country: "India",
         billing_email: order.email || 'customer@example.com',
-        billing_phone: order.mobile || '9999999999',
+        billing_phone: cleanPhone,
         shipping_is_billing: true,
         order_items: orderItems,
         payment_method: (order.paymentMethod === 'COD' || order.paymentMethod === 'Cash on Delivery') ? "COD" : "Prepaid",
         sub_total: Number(order.totalAmount || 0),
         length: 15,
-        width: 15,
+        breadth: 15,
         height: 10,
         weight: 0.5
       };
