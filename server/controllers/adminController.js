@@ -22,9 +22,10 @@ const getDashboardStats = async (req, res) => {
     const categories = await Category.find().lean();
     const newsletterCount = await Newsletter.countDocuments();
     const contactsCount = await Contact.countDocuments();
+    // Total Revenue calculation (Only count Paid orders that are not Cancelled, Refunded, or Failed)
+    const isValidPaidOrder = o => o.paymentStatus === 'Paid' && !['Cancelled', 'Refunded', 'Failed'].includes(o.orderStatus);
     
-    // Total Revenue
-    const activeOrders = orders.filter(o => o.orderStatus !== 'Cancelled' && o.orderStatus !== 'Refunded');
+    const activeOrders = orders.filter(isValidPaidOrder);
     const totalRevenue = activeOrders.reduce((sum, o) => sum + Number(o.totalAmount || 0), 0);
     
     // Customer Count
@@ -36,7 +37,7 @@ const getDashboardStats = async (req, res) => {
     // Today's stats
     const todayOrders = orders.filter(o => o.createdAt && new Date(o.createdAt).toISOString().split('T')[0] === todayStr);
     const todayOrdersCount = todayOrders.length;
-    const todayActiveOrders = todayOrders.filter(o => o.orderStatus !== 'Cancelled' && o.orderStatus !== 'Refunded');
+    const todayActiveOrders = todayOrders.filter(isValidPaidOrder);
     const todayRevenue = todayActiveOrders.reduce((sum, o) => sum + Number(o.totalAmount || 0), 0);
 
     // Counts by Status
@@ -408,7 +409,7 @@ const getAdminSettings = async (req, res) => {
   try {
     let settings = await Setting.findOne();
     if (!settings) {
-      settings = await Setting.create({ autoStatusProgression: false, progressionDelaySeconds: 30 });
+      settings = await Setting.create({ autoStatusProgression: true, progressionDelaySeconds: 30 });
     }
     const obj = settings.toObject();
     obj.id = obj._id;
@@ -576,7 +577,7 @@ const getAnalyticsData = async (req, res) => {
       const monthName = orderDate.toLocaleString('default', { month: 'short', year: 'numeric' });
 
       const amount = Number(order.totalAmount || 0);
-      if (order.orderStatus !== 'Cancelled' && order.orderStatus !== 'Refunded') {
+      if (order.paymentStatus === 'Paid' && !['Cancelled', 'Refunded', 'Failed'].includes(order.orderStatus)) {
         revenueByMonth[monthName] = (revenueByMonth[monthName] || 0) + amount;
       }
 

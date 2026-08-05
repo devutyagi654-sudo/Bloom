@@ -27,9 +27,15 @@ const Checkout = () => {
   const [state, setState] = useState('');
   const [zip, setZip] = useState('');
 
+  // Payment method state
+  const [paymentMethod, setPaymentMethod] = useState('Razorpay');
+
   // Submit states
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+
+  const deliveryCharge = paymentMethod === 'COD' ? 50 : 0;
+  const finalTotal = subtotal + deliveryCharge;
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -83,12 +89,12 @@ const Checkout = () => {
         city,
         state,
         zip,
-        paymentMethod: 'Razorpay',
-        shippingCharges: 0,
-        deliveryCharge: 0
+        paymentMethod,
+        shippingCharges: deliveryCharge,
+        deliveryCharge: deliveryCharge
       };
 
-      // 1. Create order draft on backend
+      // 1. Create order on backend
       const orderRes = await axios.post(
         `${API_URL}/orders`,
         orderPayload,
@@ -96,6 +102,16 @@ const Checkout = () => {
       );
 
       const orderData = orderRes.data;
+
+      // Handle Cash on Delivery (COD) placement
+      if (orderData.isCOD || paymentMethod === 'COD') {
+        const createdOrder = orderData.order || orderData;
+        const targetId = createdOrder._id || createdOrder.id;
+        dispatch(clearCart());
+        navigate(`/order-success/${targetId}`, { state: { order: createdOrder } });
+        setSubmitting(false);
+        return;
+      }
       const rzOrderId = orderData.razorpayOrderId || orderData.id || orderData._id;
 
       if (orderData.mockMode) {
@@ -201,8 +217,6 @@ const Checkout = () => {
       setSubmitting(false);
     }
   };
-
-  const finalTotal = subtotal;
 
   if (loading && items.length === 0) {
     return (
@@ -361,26 +375,57 @@ const Checkout = () => {
 
             </div>
 
-            {/* Payment Method Notice */}
+            {/* Payment Method Selector */}
             <div className="card-luxury p-6 sm:p-8 space-y-4 shadow-sm">
               <div className="flex items-center space-x-3 pb-4 border-b border-[#C98A63]/20 dark:border-[#C98A63]/15">
                 <CreditCard className="w-5 h-5 text-[#C98A63]" />
                 <h3 className="font-playfair text-lg font-bold tracking-wide text-[#4A3226] dark:text-white">
-                  2. Payment Method
+                  2. Select Payment Method
                 </h3>
               </div>
 
-              <div className="p-4 rounded-xl border-2 border-[#C98A63] bg-[#F4DDD2]/40 dark:bg-[#120a06]/40 flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <div className="w-4 h-4 rounded-full border-4 border-[#C98A63] bg-white"></div>
-                  <div>
-                    <span className="font-bold text-xs text-[#4A3226] dark:text-white block">Prepaid Razorpay Online Gateway</span>
-                    <span className="text-[10px] text-[#4A3226]/60 dark:text-[#F7E8DF]/50">Credit/Debit Cards, NetBanking, UPI, GooglePay, Paytm, PhonePe</span>
+              <div className="space-y-3">
+                {/* Prepaid Option */}
+                <div 
+                  onClick={() => setPaymentMethod('Razorpay')}
+                  className={`p-4 rounded-xl border-2 cursor-pointer transition-all flex items-center justify-between ${
+                    paymentMethod === 'Razorpay' 
+                      ? 'border-[#C98A63] bg-[#F4DDD2]/40 dark:bg-[#120a06]/40 shadow-sm' 
+                      : 'border-neutral-200 dark:border-neutral-800 hover:border-[#C98A63]/50'
+                  }`}
+                >
+                  <div className="flex items-center space-x-3">
+                    <div className={`w-4 h-4 rounded-full border-4 ${paymentMethod === 'Razorpay' ? 'border-[#C98A63] bg-white' : 'border-neutral-400'}`}></div>
+                    <div>
+                      <span className="font-bold text-xs text-[#4A3226] dark:text-white block">Prepaid Online Payment (Cards / UPI / NetBanking)</span>
+                      <span className="text-[10px] text-[#4A3226]/60 dark:text-[#F7E8DF]/50">Credit/Debit Cards, UPI, GooglePay, Paytm, PhonePe</span>
+                    </div>
                   </div>
+                  <span className="text-[10px] bg-green-500/10 text-green-600 dark:text-green-400 font-bold uppercase px-2.5 py-1 rounded-full border border-green-500/20">
+                    FREE Delivery (₹0)
+                  </span>
                 </div>
-                <span className="text-[10px] bg-green-500/10 text-green-500 font-bold uppercase px-2.5 py-1 rounded-full border border-green-500/20">
-                  Instant Dispatch
-                </span>
+
+                {/* COD Option */}
+                <div 
+                  onClick={() => setPaymentMethod('COD')}
+                  className={`p-4 rounded-xl border-2 cursor-pointer transition-all flex items-center justify-between ${
+                    paymentMethod === 'COD' 
+                      ? 'border-[#C98A63] bg-[#F4DDD2]/40 dark:bg-[#120a06]/40 shadow-sm' 
+                      : 'border-neutral-200 dark:border-neutral-800 hover:border-[#C98A63]/50'
+                  }`}
+                >
+                  <div className="flex items-center space-x-3">
+                    <div className={`w-4 h-4 rounded-full border-4 ${paymentMethod === 'COD' ? 'border-[#C98A63] bg-white' : 'border-neutral-400'}`}></div>
+                    <div>
+                      <span className="font-bold text-xs text-[#4A3226] dark:text-white block">Cash on Delivery (COD)</span>
+                      <span className="text-[10px] text-[#4A3226]/60 dark:text-[#F7E8DF]/50">Pay cash upon doorstep courier delivery</span>
+                    </div>
+                  </div>
+                  <span className="text-[10px] bg-amber-500/10 text-amber-600 dark:text-amber-400 font-bold uppercase px-2.5 py-1 rounded-full border border-amber-500/20">
+                    + ₹50 Delivery Fee
+                  </span>
+                </div>
               </div>
             </div>
 
@@ -424,7 +469,9 @@ const Checkout = () => {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-[#4A3226]/75 dark:text-[#F7E8DF]/65">Delivery Charges</span>
-                  <span className="font-semibold text-green-500">FREE</span>
+                  <span className={`font-semibold ${deliveryCharge === 0 ? "text-green-500" : "text-[#4A3226] dark:text-white"}`}>
+                    {deliveryCharge === 0 ? 'FREE' : formatDirectPrice(deliveryCharge)}
+                  </span>
                 </div>
                 <div className="flex justify-between border-t border-[#C98A63]/20 dark:border-[#C98A63]/15 pt-3 font-bold text-base text-[#4A3226] dark:text-white">
                   <span>Grand Total</span>
@@ -440,7 +487,7 @@ const Checkout = () => {
                 className="w-full flex items-center justify-center space-x-2 btn-luxury py-4 font-semibold text-xs tracking-widest uppercase transition-all duration-300 shadow-lg mt-4 disabled:opacity-50"
               >
                 <CheckCircle className="w-4 h-4" />
-                <span>{submitting ? 'Processing Payment...' : 'Pay Online & Place Order'}</span>
+                <span>{submitting ? 'Processing Order...' : (paymentMethod === 'COD' ? 'Place COD Order' : 'Pay Online & Place Order')}</span>
               </button>
 
             </div>

@@ -252,9 +252,62 @@ const createOrder = async (req, res) => {
       });
     }
     
-    const deliveryCharge = 0;
-    const totalAmount = subtotal;
+    const isCOD = String(paymentMethod || '').toUpperCase() === 'COD' || String(paymentMethod || '').toLowerCase() === 'cash on delivery';
+    const deliveryCharge = isCOD ? 50 : 0;
+    const totalAmount = subtotal + deliveryCharge;
     
+    // Handle Cash on Delivery (COD) order placement
+    if (isCOD) {
+      // Deduct product stock for COD order
+      for (const item of userCart) {
+        let product = null;
+        if (mongoose.Types.ObjectId.isValid(item.productId)) {
+          product = await Product.findById(item.productId);
+        }
+        if (!product) {
+          product = await Product.findOne({ _id: item.productId });
+        }
+        if (product) {
+          product.stock = Math.max(0, Number(product.stock) - Number(item.quantity));
+          await product.save();
+        }
+      }
+
+      const order = await Order.create({
+        userId,
+        fullName,
+        email: email.toLowerCase(),
+        mobile,
+        address,
+        city,
+        state,
+        zip,
+        paymentMethod: 'COD',
+        paymentStatus: 'Pending',
+        totalAmount: Number(totalAmount.toFixed(2)),
+        shippingCharges: deliveryCharge,
+        deliveryCharge: deliveryCharge,
+        couponCode: '',
+        items: orderItems,
+        orderStatus: 'Order Confirmed',
+        razorpayOrderId: ''
+      });
+
+      await Cart.deleteMany({ userId });
+      await transitionOrderStatus(order._id, 'Order Confirmed', 'System', 'Cash on Delivery order placed successfully');
+
+      const orderObj = order.toObject();
+      orderObj.id = orderObj._id;
+
+      return res.status(201).json({
+        ...orderObj,
+        isCOD: true,
+        message: 'Cash on Delivery order placed successfully',
+        order: orderObj
+      });
+    }
+
+    // Handle Online Prepaid Payment (Razorpay) - Free Delivery
     let rzOrderId = '';
     let mockMode = true;
     const amountInPaise = Math.round(Number(totalAmount) * 100);
@@ -303,14 +356,14 @@ const createOrder = async (req, res) => {
       deliveryCharge: 0,
       couponCode: '',
       items: orderItems,
-      orderStatus: 'Pending',
+      orderStatus: 'Cancelled',
       razorpayOrderId: rzOrderId
     });
 
     const orderObj = order.toObject();
     orderObj.id = orderObj._id;
 
-    await logOrderStatusHistory(order._id, '', 'Pending', 'System', 'Order draft created (prepaid payment pending)');
+    await logOrderStatusHistory(order._id, '', 'Cancelled', 'System', 'Order draft created (prepaid payment failed/cancelled by default until verified)');
 
     return res.status(201).json({
       ...orderObj,

@@ -83,7 +83,7 @@ const createShiprocketOrder = async (orderIdOrDoc) => {
         billing_phone: order.mobile || '9999999999',
         shipping_is_billing: true,
         order_items: orderItems,
-        payment_method: "Prepaid",
+        payment_method: (order.paymentMethod === 'COD' || order.paymentMethod === 'Cash on Delivery') ? "COD" : "Prepaid",
         sub_total: Number(order.totalAmount || 0),
         length: 15,
         width: 15,
