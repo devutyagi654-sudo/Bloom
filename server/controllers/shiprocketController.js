@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 const Order = require('../models/Order');
 const Product = require('../models/Product');
 const { createShiprocketOrder, trackShiprocketOrder, cancelShiprocketOrder } = require('../services/shiprocketService');
-const { sendOrderStatusEmail, logOrderStatusHistory } = require('./orderController');
+const { sendOrderStatusEmail, logOrderStatusHistory, restoreOrderStock } = require('./orderController');
 
 /**
  * Endpoint for manually triggering shipment creation (Admin Action or API)
@@ -153,25 +153,8 @@ const cancelShipment = async (req, res) => {
       await cancelShiprocketOrder(order.shipmentId);
     }
 
-    // Revert inventory stock
-    try {
-      const itemsList = Array.isArray(order.items) ? order.items : [];
-      for (const item of itemsList) {
-        let product = null;
-        if (mongoose.Types.ObjectId.isValid(item.productId)) {
-          product = await Product.findById(item.productId);
-        }
-        if (!product) {
-          product = await Product.findOne({ _id: item.productId });
-        }
-        if (product) {
-          product.stock = Number(product.stock) + Number(item.quantity);
-          await product.save();
-        }
-      }
-    } catch (stockErr) {
-      console.error('Stock revert error:', stockErr);
-    }
+    // Revert inventory stock safely (idempotent)
+    await restoreOrderStock(order);
 
     await logOrderStatusHistory(order._id, prevStatus, 'Cancelled', req.user.fullName || 'User', 'Order cancelled by customer/admin');
 

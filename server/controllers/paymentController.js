@@ -5,7 +5,7 @@ const mongoose = require('mongoose');
 const Order = require('../models/Order');
 const Product = require('../models/Product');
 const Cart = require('../models/Cart');
-const { sendOrderStatusEmail, logOrderStatusHistory, transitionOrderStatus } = require('./orderController');
+const { sendOrderStatusEmail, logOrderStatusHistory, transitionOrderStatus, restoreOrderStock } = require('./orderController');
 
 // Initialize Razorpay SDK cleanly with trimmed keys from environment variables
 const keyId = process.env.RAZORPAY_KEY_ID ? String(process.env.RAZORPAY_KEY_ID).trim() : '';
@@ -393,30 +393,12 @@ const refundPayment = async (req, res) => {
       });
     }
 
-    // Revert inventory stock
-    try {
-      const itemsList = Array.isArray(order.items) ? order.items : [];
-      for (const item of itemsList) {
-        let product = null;
-        if (mongoose.Types.ObjectId.isValid(item.productId)) {
-          product = await Product.findById(item.productId);
-        }
-        if (!product) {
-          product = await Product.findOne({ _id: item.productId });
-        }
-        if (product) {
-          product.stock = Number(product.stock) + Number(item.quantity);
-          await product.save();
-        }
-      }
-      console.log(`Reverted stock for refunded BLC Order #${order._id}`);
-    } catch (stockErr) {
-      console.error(stockErr);
-    }
-
     order.paymentStatus = 'Refunded';
     order.orderStatus = 'Refunded';
     await order.save();
+
+    // Revert inventory stock safely (idempotent)
+    await restoreOrderStock(order);
 
     try {
       await sendOrderStatusEmail(order, 'Refunded');

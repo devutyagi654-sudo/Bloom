@@ -143,6 +143,10 @@ const orderSchema = new mongoose.Schema({
   expectedDelivery: {
     type: String,
     default: ''
+  },
+  isStockRestored: {
+    type: Boolean,
+    default: false
   }
 }, {
   timestamps: true,

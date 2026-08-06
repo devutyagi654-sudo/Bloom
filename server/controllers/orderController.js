@@ -147,6 +147,72 @@ const logOrderStatusHistory = async (orderId, previousStatus, newStatus, updated
   }
 };
 
+/**
+ * Restores product stock automatically when an order is cancelled or refunded.
+ * Ensures stock is restored EXACTLY ONCE per order (idempotent check using isStockRestored).
+ * @param {Object|string} orderOrId Mongo Order ID or Order Document
+ * @returns {Promise<boolean>} True if stock was restored, false if skipped or failed
+ */
+const restoreOrderStock = async (orderOrId) => {
+  try {
+    let order = null;
+    if (typeof orderOrId === 'string' || mongoose.Types.ObjectId.isValid(orderOrId)) {
+      order = await Order.findById(orderOrId);
+      if (!order) {
+        order = await Order.findOne({ _id: orderOrId });
+      }
+    } else if (orderOrId && orderOrId._id) {
+      order = orderOrId;
+    }
+
+    if (!order) {
+      console.warn('[STOCK_RESTORE_WARN] Order document not found for stock restoration.');
+      return false;
+    }
+
+    // IDEMPOTENCY CHECK: If stock has already been restored for this order, skip duplicate restoration
+    if (order.isStockRestored) {
+      console.log(`[STOCK_RESTORE_SKIP] Inventory stock for Order #${order._id} was already restored previously. Skipping.`);
+      return false;
+    }
+
+    console.log(`[STOCK_RESTORE_START] Restoring inventory stock for Cancelled/Refunded Order #${order._id}...`);
+    const itemsList = Array.isArray(order.items) ? order.items : [];
+
+    for (const item of itemsList) {
+      let product = null;
+      if (mongoose.Types.ObjectId.isValid(item.productId)) {
+        product = await Product.findById(item.productId);
+      }
+      if (!product) {
+        product = await Product.findOne({ _id: item.productId });
+      }
+
+      if (product) {
+        const previousStock = Number(product.stock || 0);
+        const addQty = Number(item.quantity || 0);
+        product.stock = previousStock + addQty;
+        await product.save();
+
+        console.log(`[STOCK_RESTORE_SUCCESS] Product "${product.name}" (${product._id}): Stock restored from ${previousStock} to ${product.stock} (+${addQty}).`);
+      } else {
+        console.warn(`[STOCK_RESTORE_WARN] Product ID ${item.productId} not found in database while restoring stock for Order #${order._id}.`);
+      }
+    }
+
+    // Mark order as stock restored to prevent duplicate restorations
+    order.isStockRestored = true;
+    await order.save();
+
+    console.log(`[STOCK_RESTORE_COMPLETE] Stock successfully restored for Order #${order._id}. Marked isStockRestored = true.`);
+    return true;
+
+  } catch (error) {
+    console.error(`[STOCK_RESTORE_ERROR] Failed to restore stock for order:`, error.message);
+    return false;
+  }
+};
+
 const transitionOrderStatus = async (orderId, newStatus, updatedBy = 'System', notes = '') => {
   let order = null;
   if (mongoose.Types.ObjectId.isValid(orderId)) {
@@ -176,6 +242,12 @@ const transitionOrderStatus = async (orderId, newStatus, updatedBy = 'System', n
     } catch (err) {
       console.error(`[TRANSITION_SHIPROCKET_ERROR] Automatic Shiprocket dispatch failed for order #${orderId}:`, err.message);
     }
+  }
+
+  // Trigger Stock Restoration if order is Cancelled, Returned, or Refunded
+  if (newStatus === 'Cancelled' || newStatus === 'Returned' || newStatus === 'Refunded') {
+    console.log(`[TRANSITION_STOCK_RESTORE] Order #${orderId} transitioned to "${newStatus}". Triggering inventory restoration...`);
+    await restoreOrderStock(updatedOrder);
   }
 
   await logOrderStatusHistory(orderId, previousStatus, newStatus, updatedBy, notes);
@@ -572,5 +644,6 @@ module.exports = {
   generateInvoice,
   sendOrderStatusEmail,
   logOrderStatusHistory,
-  transitionOrderStatus
+  transitionOrderStatus,
+  restoreOrderStock
 };
