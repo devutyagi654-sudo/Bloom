@@ -323,6 +323,18 @@ const verifyPayment = async (req, res) => {
     await Cart.deleteMany({ userId });
     await logOrderStatusHistory(order._id, '', 'Order Confirmed', 'System', 'Prepaid payment verified and order created');
 
+    // Trigger Shiprocket Order Creation for Prepaid Order
+    try {
+      const { createShipmentInternal } = require('./shippingController');
+      console.log(`[PREPAID_SHIPROCKET] Pushing Prepaid Order #${order._id} to Shiprocket API...`);
+      const dispatchedOrder = await createShipmentInternal(order._id);
+      if (dispatchedOrder) {
+        order = dispatchedOrder;
+      }
+    } catch (srErr) {
+      console.error(`[PREPAID_SHIPROCKET_ERROR] Failed auto-dispatch for Prepaid Order #${order._id}:`, srErr.message);
+    }
+
     try {
       await sendOrderStatusEmail(order, 'Order Confirmed');
     } catch (mailErr) {

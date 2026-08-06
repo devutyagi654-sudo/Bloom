@@ -159,23 +159,22 @@ const transitionOrderStatus = async (orderId, newStatus, updatedBy = 'System', n
   if (!order) return null;
 
   const previousStatus = order.orderStatus;
-  if (previousStatus === newStatus) return order;
-
   order.orderStatus = newStatus;
   await order.save();
 
   let updatedOrder = order;
 
-  // If status transitions to "Order Confirmed" and shipment isn't created, trigger dispatch
-  if (newStatus === 'Order Confirmed' && !updatedOrder.awbCode) {
+  // Trigger Shiprocket dispatch if order is confirmed and shipment hasn't been created on Shiprocket yet
+  if ((newStatus === 'Order Confirmed' || newStatus === 'Processing' || newStatus === 'Ready to Ship') && (!updatedOrder.shipmentId || updatedOrder.shipmentId.startsWith('SR_SHIP_'))) {
     try {
       const { createShipmentInternal } = require('./shippingController');
+      console.log(`[TRANSITION_SHIPROCKET] Triggering automatic Shiprocket dispatch for Order #${orderId}...`);
       const dispatched = await createShipmentInternal(orderId);
       if (dispatched) {
         updatedOrder = dispatched;
       }
     } catch (err) {
-      console.error(`Automatic shiprocket dispatch failed for order #${orderId} on confirmation:`, err.message);
+      console.error(`[TRANSITION_SHIPROCKET_ERROR] Automatic Shiprocket dispatch failed for order #${orderId}:`, err.message);
     }
   }
 
@@ -190,7 +189,7 @@ const transitionOrderStatus = async (orderId, newStatus, updatedBy = 'System', n
   return updatedOrder;
 };
 
-// Create a new order (Online Payment / Razorpay Checkout)
+// Create a new order (Online Payment / Razorpay Checkout or Cash on Delivery)
 const createOrder = async (req, res) => {
   try {
     const {
@@ -273,7 +272,7 @@ const createOrder = async (req, res) => {
         }
       }
 
-      const order = await Order.create({
+      let order = await Order.create({
         userId,
         fullName,
         email: email.toLowerCase(),
@@ -295,6 +294,18 @@ const createOrder = async (req, res) => {
 
       await Cart.deleteMany({ userId });
       await transitionOrderStatus(order._id, 'Order Confirmed', 'System', 'Cash on Delivery order placed successfully');
+
+      // Trigger Shiprocket Order Creation for COD Order
+      try {
+        const { createShipmentInternal } = require('./shippingController');
+        console.log(`[COD_SHIPROCKET] Pushing COD Order #${order._id} to Shiprocket API...`);
+        const dispatchedOrder = await createShipmentInternal(order._id);
+        if (dispatchedOrder) {
+          order = dispatchedOrder;
+        }
+      } catch (srErr) {
+        console.error(`[COD_SHIPROCKET_ERROR] Failed to push COD Order #${order._id} to Shiprocket:`, srErr.message);
+      }
 
       const orderObj = order.toObject();
       orderObj.id = orderObj._id;

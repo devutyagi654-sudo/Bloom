@@ -14,7 +14,8 @@ const isShiprocketConfigured = () => {
     email && 
     password && 
     email !== 'your_shiprocket_email' && 
-    password !== 'your_shiprocket_password'
+    password !== 'your_shiprocket_password' &&
+    email.includes('@')
   );
 };
 
@@ -28,37 +29,52 @@ let tokenExpiry = null;
  * @returns {Promise<string|null>} Bearer Token or null if not configured/auth fails
  */
 const getShiprocketToken = async () => {
+  console.log('--- SHIPROCKET AUTHENTICATION ---');
+  
   if (!isShiprocketConfigured()) {
-    console.log('[SHIPROCKET] Credentials not configured in .env. Running in simulated mode.');
+    const { email } = getCredentials();
+    console.warn('[SHIPROCKET_AUTH_WARN] Shiprocket credentials not properly configured in environment variables.');
+    console.warn(`[SHIPROCKET_AUTH_WARN] Configured Email: "${email || 'MISSING'}"`);
     return null;
   }
 
   // Return cached token if valid (buffer of 24 hours before 10-day expiration)
   if (shiprocketToken && tokenExpiry && new Date() < tokenExpiry) {
+    console.log('[SHIPROCKET_AUTH] Using valid cached Bearer Token.');
     return shiprocketToken;
   }
 
   const { email, password } = getCredentials();
 
   try {
-    console.log('[SHIPROCKET] Authenticating with Shiprocket API...');
+    console.log(`[SHIPROCKET_AUTH] Requesting new Bearer Token from Shiprocket API for: ${email}`);
+    
     const response = await axios.post('https://apiv2.shiprocket.in/v1/external/auth/login', {
       email,
       password
     });
 
+    console.log(`[SHIPROCKET_AUTH_RESPONSE] HTTP Status Code: ${response.status}`);
+
     if (response.data && response.data.token) {
       shiprocketToken = response.data.token;
       // Shiprocket tokens expire in 10 days; refresh 1 day early (9 days expiry)
       tokenExpiry = new Date(Date.now() + 9 * 24 * 60 * 60 * 1000);
-      console.log('[SHIPROCKET] Authentication successful. Token cached.');
+      
+      console.log('[SHIPROCKET_AUTH_SUCCESS] Shiprocket authentication successful. Bearer token cached.');
+      console.log(`[SHIPROCKET_AUTH_TOKEN] Token Prefix: ${shiprocketToken.substring(0, 15)}...`);
       return shiprocketToken;
     } else {
-      console.error('[SHIPROCKET] Auth response missing token:', response.data);
+      console.error('[SHIPROCKET_AUTH_ERROR] Authentication response missing token payload:', JSON.stringify(response.data));
       return null;
     }
   } catch (error) {
-    console.error('[SHIPROCKET] Authentication Failed:', error.response?.data || error.message);
+    console.error('[SHIPROCKET_AUTH_ERROR] Authentication Failed:');
+    console.error('Error Message:', error.message);
+    if (error.response) {
+      console.error('HTTP Status Code:', error.response.status);
+      console.error('Response Data:', JSON.stringify(error.response.data, null, 2));
+    }
     return null;
   }
 };
