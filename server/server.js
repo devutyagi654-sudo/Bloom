@@ -281,8 +281,13 @@ connectDB()
       console.log(`Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
       console.log("===================================");
       console.log("RAZORPAY CONFIG CHECK:");
-      console.log("KEY_ID:", process.env.RAZORPAY_KEY_ID);
+      console.log("KEY_ID:", process.env.RAZORPAY_KEY_ID || 'MISSING');
       console.log("SECRET FOUND:", !!process.env.RAZORPAY_KEY_SECRET);
+      console.log("-----------------------------------");
+      console.log("SHIPROCKET CONFIG CHECK:");
+      console.log("EMAIL:", process.env.SHIPROCKET_EMAIL ? `CONFIGURED (${process.env.SHIPROCKET_EMAIL})` : 'MISSING ❌');
+      console.log("PASSWORD FOUND:", !!process.env.SHIPROCKET_PASSWORD);
+      console.log("PICKUP LOCATION:", process.env.SHIPROCKET_PICKUP_LOCATION || "Primary");
       console.log("===================================");
       startProgressionService();
     });
