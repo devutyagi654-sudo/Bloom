@@ -287,7 +287,7 @@ connectDB()
       console.log("SHIPROCKET CONFIG CHECK:");
       console.log("EMAIL:", process.env.SHIPROCKET_EMAIL ? `CONFIGURED (${process.env.SHIPROCKET_EMAIL})` : 'MISSING ❌');
       console.log("PASSWORD FOUND:", !!process.env.SHIPROCKET_PASSWORD);
-      console.log("PICKUP LOCATION:", process.env.SHIPROCKET_PICKUP_LOCATION || "Primary");
+      console.log("PICKUP LOCATION:", process.env.SHIPROCKET_PICKUP_LOCATION || "Home");
       console.log("===================================");
       startProgressionService();
     });

@@ -89,7 +89,7 @@ const createShiprocketOrder = async (orderIdOrDoc) => {
       cleanPhone = '9999999999';
     }
 
-    const pickupLocation = (process.env.SHIPROCKET_PICKUP_LOCATION || "Primary").trim();
+    const pickupLocation = (process.env.SHIPROCKET_PICKUP_LOCATION || "Home").trim();
     const isCodPayment = isCOD ? "COD" : "Prepaid";
 
     // 8. Official Shiprocket Adhoc Order Creation Payload
