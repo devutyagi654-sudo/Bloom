@@ -48,12 +48,24 @@ async function seedDatabase() {
     // Ensure Bangles category exists and migration for existing DB records
     await Category.findOneAndUpdate(
       { name: { $regex: /^bangles$/i } },
-      { name: 'Bangles', description: 'Handcrafted traditional and modern gold & silver bangles.', image: 'https://images.unsplash.com/photo-1611591437281-460bfbe1220a?w=600&auto=format&fit=crop&q=80' },
+      {
+        $setOnInsert: {
+          name: 'Bangles',
+          description: 'Handcrafted traditional and modern gold & silver bangles.',
+          image: 'https://images.unsplash.com/photo-1611591437281-460bfbe1220a?w=600&auto=format&fit=crop&q=80'
+        }
+      },
       { upsert: true, new: true }
     );
     await Category.findOneAndUpdate(
       { name: { $regex: /^bracelets?$/i } },
-      { name: 'Bracelets', description: 'Sleek fashion gold and silver finish bracelets.', image: 'https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?w=600&auto=format&fit=crop&q=80' },
+      {
+        $setOnInsert: {
+          name: 'Bracelets',
+          description: 'Sleek fashion gold and silver finish bracelets.',
+          image: 'https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?w=600&auto=format&fit=crop&q=80'
+        }
+      },
       { upsert: true, new: true }
     );
 
