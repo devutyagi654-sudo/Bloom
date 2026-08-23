@@ -138,24 +138,28 @@ const MyOrders = () => {
 
                 {/* Bottom billing info */}
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between border-t border-neutral-200/60 dark:border-neutral-900 pt-4 gap-2 text-xs">
-                  <div className="flex items-center space-x-6 text-neutral-500">
+                  <div className="flex flex-wrap items-center gap-x-6 gap-y-1 text-neutral-500">
                     <div className="flex items-center">
                       <Clock className="w-4 h-4 mr-1 text-neutral-400" />
                       <span>Method: {order.paymentMethod}</span>
                     </div>
                     <div className="flex items-center">
                       <CreditCard className="w-4 h-4 mr-1 text-neutral-400" />
-                      <span>Status: {order.paymentStatus}</span>
+                      <span>Status: <strong className="text-neutral-700 dark:text-neutral-300 ml-1">{order.paymentStatus}</strong></span>
                     </div>
-                    <div className="flex items-center">
-                      <span className="text-neutral-400 mr-1">Delivery:</span>
-                      <span className={order.shippingCharges === 0 ? "text-green-500 font-semibold" : "text-neutral-700 dark:text-neutral-300 font-semibold"}>
-                        {order.shippingCharges === 0 ? 'FREE' : formatDirectPrice(order.shippingCharges)}
-                      </span>
-                    </div>
+                    {order.prepaidAmount > 0 && (
+                      <div className="flex items-center text-green-600 dark:text-green-400 font-semibold">
+                        <span>Prepaid Online: {formatDirectPrice(order.prepaidAmount)}</span>
+                      </div>
+                    )}
+                    {order.codAmount > 0 && (
+                      <div className="flex items-center text-amber-600 dark:text-amber-400 font-semibold">
+                        <span>Balance COD: {formatDirectPrice(order.codAmount)}</span>
+                      </div>
+                    )}
                   </div>
                   <div className="flex items-baseline space-x-2">
-                    <span className="text-neutral-500 font-bold uppercase tracking-widest text-[9px]">Total Debited:</span>
+                    <span className="text-neutral-500 font-bold uppercase tracking-widest text-[9px]">Total Amount:</span>
                     <span className="text-luxury-gold-600 dark:text-luxury-gold-400 font-bold text-sm">
                       {formatDirectPrice(order.totalAmount)}
                     </span>
@@ -164,13 +168,13 @@ const MyOrders = () => {
 
                 {/* Operations Action Buttons Deck */}
                 <div className="flex flex-wrap items-center justify-end gap-3 pt-3 border-t border-neutral-200/40 dark:border-neutral-900/60">
-                  {order.paymentMethod === 'Razorpay' && (order.paymentStatus === 'Failed' || order.orderStatus === 'Pending') && (
+                  {(order.paymentMethod === 'Razorpay' || order.paymentMethod === 'COD + Razorpay Prepaid') && (order.paymentStatus === 'Failed' || order.paymentStatus === 'Pending' || order.orderStatus === 'Pending') && (
                     <button
                       type="button"
                       onClick={() => handleRetryPayment(order)}
                       className="bg-luxury-gold-600 hover:bg-luxury-gold-700 text-white font-bold text-[10px] uppercase tracking-wider px-4 py-2.5 rounded transition-colors"
                     >
-                      Pay Again
+                      {order.paymentMethod === 'COD + Razorpay Prepaid' ? 'Retry ₹100 Deposit' : 'Pay Again'}
                     </button>
                   )}
                   <Link

@@ -94,7 +94,7 @@ const Checkout = () => {
         deliveryCharge: deliveryCharge
       };
 
-      // 1. Create order on backend
+      // 1. Create order draft on backend
       const orderRes = await axios.post(
         `${API_URL}/orders`,
         orderPayload,
@@ -102,21 +102,16 @@ const Checkout = () => {
       );
 
       const orderData = orderRes.data;
-
-      // Handle Cash on Delivery (COD) placement
-      if (orderData.isCOD || paymentMethod === 'COD') {
-        const createdOrder = orderData.order || orderData;
-        const targetId = createdOrder._id || createdOrder.id;
-        dispatch(clearCart());
-        navigate(`/order-success/${targetId}`, { state: { order: createdOrder } });
-        setSubmitting(false);
-        return;
-      }
       const rzOrderId = orderData.razorpayOrderId || orderData.id || orderData._id;
+      const isCodDeposit = paymentMethod === 'COD' || orderData.isCodPrepaid;
 
       if (orderData.mockMode) {
         // Simulated payment confirmation in mock mode
-        const confirmPayment = window.confirm("BLC Sandbox Gateway: Press OK to simulate a successful Razorpay online transaction.");
+        const mockPromptMsg = isCodDeposit 
+          ? `BLC Sandbox Gateway: Press OK to simulate ₹100 online deposit payment for your COD order.`
+          : `BLC Sandbox Gateway: Press OK to simulate a successful Razorpay online transaction.`;
+
+        const confirmPayment = window.confirm(mockPromptMsg);
         if (confirmPayment) {
           const verifyRes = await axios.post(
             `${API_URL}/payment/verify`,
@@ -132,13 +127,20 @@ const Checkout = () => {
             { headers: { Authorization: `Bearer ${token}` } }
           );
 
-          const createdOrder = verifyRes.data.order || verifyRes.data;
-          const targetId = createdOrder._id || createdOrder.id;
+          if (verifyRes.data.success) {
+            const createdOrder = verifyRes.data.order || verifyRes.data;
+            const targetId = createdOrder._id || createdOrder.id;
 
-          dispatch(clearCart());
-          navigate(`/order-success/${targetId}`, { state: { order: createdOrder } });
+            dispatch(clearCart());
+            navigate(`/order-success/${targetId}`, { state: { order: createdOrder } });
+          } else {
+            setError(verifyRes.data.message || 'Payment verification failed');
+          }
         } else {
-          setError('Payment cancelled by user');
+          setError(isCodDeposit 
+            ? '₹100 Advance Payment for COD order was cancelled. Order not confirmed.' 
+            : 'Online payment cancelled by user.'
+          );
         }
         setSubmitting(false);
         return;
@@ -150,7 +152,7 @@ const Checkout = () => {
         amount: orderData.amount,
         currency: orderData.currency || 'INR',
         name: 'bloomluxecollection',
-        description: 'Luxury Jewelry & Timepieces Checkout',
+        description: isCodDeposit ? 'COD Order Advance Deposit (₹100)' : 'Luxury Jewelry & Timepieces Checkout',
         image: 'https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=120&auto=format&fit=crop&q=80',
         order_id: rzOrderId,
         handler: async function (response) {
@@ -198,6 +200,10 @@ const Checkout = () => {
         },
         modal: {
           ondismiss: function() {
+            setError(isCodDeposit 
+              ? '₹100 deposit payment was cancelled. Your order was not confirmed.' 
+              : 'Razorpay checkout cancelled by user.'
+            );
             setSubmitting(false);
           }
         }
@@ -418,8 +424,8 @@ const Checkout = () => {
                   <div className="flex items-center space-x-3">
                     <div className={`w-4 h-4 rounded-full border-4 ${paymentMethod === 'COD' ? 'border-[#C98A63] bg-white' : 'border-neutral-400'}`}></div>
                     <div>
-                      <span className="font-bold text-xs text-[#4A3226] dark:text-white block">Cash on Delivery (COD)</span>
-                      <span className="text-[10px] text-[#4A3226]/60 dark:text-[#F7E8DF]/50">Pay cash upon doorstep courier delivery</span>
+                      <span className="font-bold text-xs text-[#4A3226] dark:text-white block">Cash on Delivery (COD + ₹100 Online Advance)</span>
+                      <span className="text-[10px] text-[#4A3226]/60 dark:text-[#F7E8DF]/50">Pay ₹100 online via Razorpay now & remaining balance on delivery</span>
                     </div>
                   </div>
                   <span className="text-[10px] bg-amber-500/10 text-amber-600 dark:text-amber-400 font-bold uppercase px-2.5 py-1 rounded-full border border-amber-500/20">
@@ -477,6 +483,19 @@ const Checkout = () => {
                   <span>Grand Total</span>
                   <span className="text-[#C98A63]">{formatDirectPrice(finalTotal)}</span>
                 </div>
+
+                {paymentMethod === 'COD' && (
+                  <div className="bg-[#C98A63]/10 dark:bg-[#C98A63]/15 p-3 rounded-xl space-y-1.5 text-[11px] mt-2 border border-[#C98A63]/20">
+                    <div className="flex justify-between font-medium">
+                      <span className="text-[#4A3226]/80 dark:text-[#F7E8DF]/80">Razorpay Online Prepaid:</span>
+                      <span className="font-bold text-green-600 dark:text-green-400">{formatDirectPrice(Math.min(100, finalTotal))}</span>
+                    </div>
+                    <div className="flex justify-between font-medium">
+                      <span className="text-[#4A3226]/80 dark:text-[#F7E8DF]/80">Remaining Balance (COD):</span>
+                      <span className="font-bold text-[#C98A63]">{formatDirectPrice(Math.max(0, finalTotal - Math.min(100, finalTotal)))}</span>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <button
@@ -487,7 +506,7 @@ const Checkout = () => {
                 className="w-full flex items-center justify-center space-x-2 btn-luxury py-4 font-semibold text-xs tracking-widest uppercase transition-all duration-300 shadow-lg mt-4 disabled:opacity-50"
               >
                 <CheckCircle className="w-4 h-4" />
-                <span>{submitting ? 'Processing Order...' : (paymentMethod === 'COD' ? 'Place COD Order' : 'Pay Online & Place Order')}</span>
+                <span>{submitting ? 'Processing Order...' : (paymentMethod === 'COD' ? `Pay ${formatDirectPrice(Math.min(100, finalTotal))} Online & Place COD Order` : 'Pay Online & Place Order')}</span>
               </button>
 
             </div>

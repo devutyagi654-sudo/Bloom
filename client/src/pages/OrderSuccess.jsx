@@ -114,6 +114,26 @@ const OrderSuccess = () => {
                     <span>Grand Total</span>
                     <span className="text-luxury-gold-600 dark:text-luxury-gold-400">{formatDirectPrice(order.totalAmount)}</span>
                   </div>
+
+                  {/* Payment & COD Breakdown Card */}
+                  {(order.paymentMethod === 'COD + Razorpay Prepaid' || (order.codAmount > 0) || (order.prepaidAmount > 0)) && (
+                    <div className="bg-amber-500/10 dark:bg-amber-500/15 p-3.5 rounded-xl border border-amber-500/20 space-y-2 mt-3">
+                      <div className="flex justify-between items-center text-xs">
+                        <span className="font-bold text-neutral-700 dark:text-neutral-300">Payment Summary:</span>
+                        <span className="bg-green-500/10 text-green-600 dark:text-green-400 font-bold text-[10px] uppercase px-2 py-0.5 rounded border border-green-500/20">
+                          {order.paymentStatus || '₹100 Paid'}
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-xs font-medium text-neutral-600 dark:text-neutral-400">
+                        <span>Paid via Razorpay Online:</span>
+                        <span className="font-bold text-green-600 dark:text-green-400">{formatDirectPrice(order.prepaidAmount || 100)}</span>
+                      </div>
+                      <div className="flex justify-between text-xs font-medium text-neutral-600 dark:text-neutral-400">
+                        <span>Remaining Balance (COD):</span>
+                        <span className="font-bold text-amber-600 dark:text-amber-400">{formatDirectPrice(order.codAmount || (order.totalAmount - (order.prepaidAmount || 100)))}</span>
+                      </div>
+                    </div>
+                  )}
                 </div>
               );
             })()}
@@ -124,6 +144,7 @@ const OrderSuccess = () => {
               <p>{order.fullName}</p>
               <p>{order.address}, {order.city}, {order.state} {order.zip}</p>
               <p>Payment Mode: <span className="font-semibold text-neutral-700 dark:text-neutral-300">{order.paymentMethod}</span></p>
+              <p>Payment Status: <span className="font-semibold text-green-600 dark:text-green-400">{order.paymentStatus}</span></p>
             </div>
           </div>
         ) : null}

@@ -173,16 +173,22 @@ const verifyPayment = async (req, res) => {
     const existingOrder = await Order.findOne({ razorpayOrderId: rzOrderId });
 
     if (existingOrder) {
-      if (existingOrder.paymentStatus !== 'Paid') {
-        // Deduct inventory stock
-        const cartItems = await Cart.find({ userId });
-        for (const item of cartItems) {
+      const isAlreadyPaid = existingOrder.paymentStatus === 'Paid' || existingOrder.paymentStatus === '₹100 Paid' || existingOrder.orderStatus === 'Order Confirmed';
+
+      if (!isAlreadyPaid) {
+        // Deduct inventory stock cleanly
+        const itemsToDeduct = (existingOrder.items && existingOrder.items.length > 0) 
+          ? existingOrder.items 
+          : await Cart.find({ userId });
+
+        for (const item of itemsToDeduct) {
           let product = null;
-          if (mongoose.Types.ObjectId.isValid(item.productId)) {
-            product = await Product.findById(item.productId);
+          const pId = item.productId || item._id;
+          if (mongoose.Types.ObjectId.isValid(pId)) {
+            product = await Product.findById(pId);
           }
           if (!product) {
-            product = await Product.findOne({ _id: item.productId });
+            product = await Product.findOne({ _id: pId });
           }
           if (product) {
             product.stock = Math.max(0, Number(product.stock) - Number(item.quantity));
@@ -190,15 +196,16 @@ const verifyPayment = async (req, res) => {
           }
         }
 
-        existingOrder.paymentStatus = 'Paid';
+        const isCodPrepaidOrder = existingOrder.paymentMethod === 'COD + Razorpay Prepaid' || existingOrder.prepaidAmount > 0;
+        existingOrder.paymentStatus = isCodPrepaidOrder ? '₹100 Paid' : 'Paid';
         existingOrder.orderStatus = 'Order Confirmed';
         existingOrder.razorpayPaymentId = rzPaymentId;
         existingOrder.razorpaySignature = rzSignature || 'mock_signature';
         await existingOrder.save();
 
-        console.log(`[RAZORPAY_VERIFY_SUCCESS] Existing Order #${existingOrder._id} marked as Paid & Confirmed.`);
+        console.log(`[RAZORPAY_VERIFY_SUCCESS] Existing Order #${existingOrder._id} marked as ${existingOrder.paymentStatus} & Confirmed.`);
 
-        await transitionOrderStatus(existingOrder._id, 'Order Confirmed', 'System', 'Prepaid payment verified successfully');
+        await transitionOrderStatus(existingOrder._id, 'Order Confirmed', 'System', `${isCodPrepaidOrder ? 'COD ₹100 prepaid deposit' : 'Full online payment'} verified successfully`);
         await Cart.deleteMany({ userId });
       }
 
@@ -440,7 +447,11 @@ const retryRazorpayOrder = async (req, res) => {
       return res.status(403).json({ success: false, message: 'Not authorized to retry this order' });
     }
 
-    const amountInPaise = Math.round(Number(order.totalAmount) * 100);
+    const retryAmount = (order.paymentMethod === 'COD + Razorpay Prepaid' || (order.prepaidAmount > 0 && order.codAmount > 0))
+      ? (order.prepaidAmount || 100)
+      : order.totalAmount;
+
+    const amountInPaise = Math.round(Number(retryAmount) * 100);
 
     if (razorpay) {
       const options = {

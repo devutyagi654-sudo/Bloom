@@ -64,17 +64,25 @@ const orderSchema = new mongoose.Schema({
   },
   paymentMethod: {
     type: String,
-    enum: ['Razorpay', 'Card', 'UPI', 'NetBanking', 'MockPay', 'COD', 'Cash on Delivery'],
+    enum: ['Razorpay', 'Card', 'UPI', 'NetBanking', 'MockPay', 'COD', 'Cash on Delivery', 'COD + Razorpay Prepaid', 'COD + Razorpay'],
     default: 'Razorpay'
   },
   paymentStatus: {
     type: String,
-    enum: ['Pending', 'Paid', 'Failed', 'Refunded'],
+    enum: ['Pending', 'Paid', 'Failed', 'Refunded', 'Partially Paid', '₹100 Paid'],
     default: 'Pending'
   },
   totalAmount: {
     type: Number,
     required: true
+  },
+  prepaidAmount: {
+    type: Number,
+    default: 0
+  },
+  codAmount: {
+    type: Number,
+    default: 0
   },
   shippingCharges: {
     type: Number,
