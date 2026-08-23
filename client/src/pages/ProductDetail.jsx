@@ -294,84 +294,85 @@ const ProductDetail = () => {
               </div>
             )}
 
-            {/* Delivery & Live Social Proof Banner */}
-            <div className="space-y-2.5 pt-2">
-              <div className="flex items-center space-x-2 text-xs font-semibold text-neutral-800 dark:text-neutral-200">
-                <Truck className="w-4.5 h-4.5 text-neutral-700 dark:text-neutral-300 flex-shrink-0 stroke-[2]" />
-                <span>Fast Delivery within 2-3 days</span>
+            {/* Trust highlights banner */}
+            <div className="bg-neutral-50 dark:bg-neutral-950 p-4 rounded-xl border border-neutral-100 dark:border-neutral-900 grid grid-cols-3 gap-4 text-center">
+              <div className="flex flex-col items-center space-y-1">
+                <Award className="w-5 h-5 text-luxury-gold-500" />
+                <span className="text-[10px] uppercase font-bold tracking-widest text-neutral-600 dark:text-neutral-400">Premium Quality</span>
               </div>
-              
-              <div className="inline-flex items-center space-x-2 bg-teal-500/10 dark:bg-teal-500/15 border border-teal-500/20 text-teal-700 dark:text-teal-400 px-3.5 py-1.5 rounded-full text-xs font-medium">
-                <span className="w-2 h-2 rounded-full bg-teal-500 animate-ping"></span>
-                <span><strong className="font-bold">45 people</strong> are checking out right now</span>
+              <div className="flex flex-col items-center space-y-1">
+                <ShieldCheck className="w-5 h-5 text-luxury-gold-500" />
+                <span className="text-[10px] uppercase font-bold tracking-widest text-neutral-600 dark:text-neutral-400">Skin-Friendly Material</span>
+              </div>
+              <div className="flex flex-col items-center space-y-1">
+                <Package className="w-5 h-5 text-luxury-gold-500" />
+                <span className="text-[10px] uppercase font-bold tracking-widest text-neutral-600 dark:text-neutral-400">Secure Packaging</span>
               </div>
             </div>
 
             {/* Add to cart / quantity selector / wishlist / Buy Now controls */}
             {Number(product.stock) > 0 && (
-              <div className="space-y-3 pt-2">
+              <div className="grid grid-cols-[auto_1fr_auto] gap-x-2.5 sm:gap-x-3 gap-y-2.5 sm:gap-y-3 items-center pt-2">
                 
-                {/* Quantity + Add to Cart + Wishlist Row */}
-                <div className="flex items-center space-x-2.5 sm:space-x-3">
-                  
-                  {/* Quantity selection */}
-                  <div className="flex border-2 border-black dark:border-neutral-700 rounded-xl bg-white dark:bg-neutral-900 overflow-hidden h-12 flex-shrink-0">
-                    <button
-                      type="button"
-                      onClick={() => setQuantity(q => Math.max(1, q - 1))}
-                      className="px-3 py-2 text-lg font-bold hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-neutral-800 dark:text-neutral-200"
-                    >
-                      -
-                    </button>
-                    <span className="px-2.5 flex items-center font-bold text-sm min-w-[32px] justify-center text-neutral-800 dark:text-neutral-200">
-                      {quantity}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => setQuantity(q => Math.min(Number(product.stock), q + 1))}
-                      className="px-3 py-2 text-lg font-bold hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-neutral-800 dark:text-neutral-200"
-                    >
-                      +
-                    </button>
-                  </div>
-
-                  {/* Add to Cart button */}
+                {/* Row 1, Col 1: Quantity selection */}
+                <div className="flex border border-neutral-300 dark:border-neutral-800 rounded-xl bg-white dark:bg-neutral-900 overflow-hidden h-12 flex-shrink-0">
                   <button
                     type="button"
-                    onClick={handleAddToCart}
-                    className="h-12 flex-1 flex items-center justify-center space-x-2 border-2 border-black dark:border-white bg-white dark:bg-black hover:bg-neutral-100 dark:hover:bg-neutral-900 text-black dark:text-white font-extrabold text-xs tracking-widest uppercase rounded-xl transition-all duration-200"
+                    onClick={() => setQuantity(q => Math.max(1, q - 1))}
+                    className="px-3 sm:px-3.5 py-2 text-lg font-bold hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-neutral-800 dark:text-neutral-200"
                   >
-                    <ShoppingCart className="w-4 h-4 flex-shrink-0" />
-                    <span className="truncate">Add to cart</span>
+                    -
                   </button>
-
-                  {/* Wishlist toggle button */}
+                  <span className="px-2 sm:px-3 flex items-center font-bold text-sm min-w-9 justify-center text-neutral-800 dark:text-neutral-200">
+                    {quantity}
+                  </span>
                   <button
                     type="button"
-                    onClick={handleWishlistToggle}
-                    className="w-12 h-12 flex-shrink-0 flex items-center justify-center border-2 border-black/20 dark:border-neutral-700 rounded-xl bg-white dark:bg-neutral-900 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-neutral-700 dark:text-neutral-300 shadow-xs"
-                    title="Add to Wishlist"
+                    onClick={() => setQuantity(q => Math.min(Number(product.stock), q + 1))}
+                    className="px-3 sm:px-3.5 py-2 text-lg font-bold hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-neutral-800 dark:text-neutral-200"
                   >
-                    <Heart className={`w-5 h-5 ${inWishlist ? 'fill-red-600 text-red-600' : ''}`} />
+                    +
                   </button>
-
                 </div>
 
-                {/* BUY NOW Button with Embedded Payment Badges & Shiprocket Branding */}
+                {/* Row 1, Col 2: Add to Cart button (Original Luxury Gold Gradient Styling) */}
+                <button
+                  type="button"
+                  onClick={handleAddToCart}
+                  className="h-12 w-full flex items-center justify-center space-x-2 bg-gradient-to-r from-luxury-gold-600 to-luxury-gold-500 hover:from-luxury-gold-500 hover:to-luxury-gold-400 text-black font-bold text-xs tracking-widest uppercase rounded-xl shadow-md hover:shadow-lg transition-all duration-200"
+                >
+                  <ShoppingCart className="w-4 h-4 flex-shrink-0" />
+                  <span className="truncate">Add to Cart</span>
+                </button>
+
+                {/* Row 1, Col 3: Wishlist toggle button */}
+                <button
+                  type="button"
+                  onClick={handleWishlistToggle}
+                  className="w-12 sm:w-[56px] h-12 flex-shrink-0 flex items-center justify-center border border-neutral-300 dark:border-neutral-800 rounded-xl bg-white dark:bg-neutral-900 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-neutral-700 dark:text-neutral-300 shadow-xs"
+                  title="Add to Wishlist"
+                >
+                  <Heart className={`w-5 h-5 ${inWishlist ? 'fill-red-600 text-red-600' : ''}`} />
+                </button>
+
+                {/* Row 2, Col 1: Empty spacer matching Quantity selector column */}
+                <div></div>
+
+                {/* Row 2, Col 2: BUY NOW Button with Embedded Payment Icons & Shiprocket Credit */}
                 <button
                   type="button"
                   onClick={handleBuyNow}
                   disabled={buyNowLoading}
-                  className="w-full h-14 bg-black hover:bg-neutral-900 text-white dark:bg-neutral-900 dark:hover:bg-black font-extrabold text-sm tracking-widest uppercase rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 border border-black/10 dark:border-neutral-800 disabled:opacity-50 flex items-center justify-between px-5 relative overflow-hidden group"
+                  className="h-12 w-full bg-black hover:bg-neutral-900 text-white dark:bg-neutral-900 dark:hover:bg-black font-bold text-xs tracking-widest uppercase rounded-xl shadow-md hover:shadow-lg transition-all duration-200 border border-black/10 dark:border-neutral-800 disabled:opacity-50 flex items-center justify-between px-4"
                 >
-                  <div className="flex items-center space-x-3 mx-auto sm:mx-0">
+                  <div className="flex items-center space-x-2.5 mx-auto sm:mx-0">
                     <span>{buyNowLoading ? 'Processing...' : 'BUY NOW'}</span>
                     
                     {/* Embedded Payment Icons (GPay, PhonePe, Paytm) */}
-                    <div className="flex items-center space-x-1.5 bg-white/10 backdrop-blur-xs py-1 px-2.5 rounded-full border border-white/20">
+                    <div className="flex items-center space-x-1.5 bg-white/10 backdrop-blur-xs py-0.5 px-2 rounded-full border border-white/20">
                       {/* Google Pay */}
-                      <span className="w-5 h-5 bg-white rounded-full flex items-center justify-center p-0.5 shadow-xs" title="Google Pay">
-                        <svg viewBox="0 0 24 24" className="w-3.5 h-3.5">
+                      <span className="w-4.5 h-4.5 bg-white rounded-full flex items-center justify-center p-0.5 shadow-xs" title="Google Pay">
+                        <svg viewBox="0 0 24 24" className="w-3 h-3">
                           <path fill="#4285F4" d="M23.49 12.27c0-.79-.07-1.54-.19-2.27H12v4.51h6.47c-.29 1.48-1.14 2.73-2.4 3.58v3h3.86c2.26-2.09 3.56-5.17 3.56-8.82z"/>
                           <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.86-3c-1.08.72-2.45 1.16-4.07 1.16-3.13 0-5.78-2.11-6.73-4.96H1.29v3.1C3.26 21.3 7.31 24 12 24z"/>
                           <path fill="#FBBC05" d="M5.27 14.29c-.25-.72-.38-1.49-.38-2.29s.14-1.57.38-2.29V6.61H1.29C.47 8.24 0 10.06 0 12s.47 3.76 1.29 5.39l3.98-3.1z"/>
@@ -380,23 +381,26 @@ const ProductDetail = () => {
                       </span>
 
                       {/* PhonePe */}
-                      <span className="w-5 h-5 bg-[#5f259f] rounded-full flex items-center justify-center text-white font-bold text-[9px] shadow-xs" title="PhonePe">
+                      <span className="w-4.5 h-4.5 bg-[#5f259f] rounded-full flex items-center justify-center text-white font-bold text-[8px] shadow-xs" title="PhonePe">
                         पे
                       </span>
 
                       {/* Paytm */}
-                      <span className="w-5 h-5 bg-[#002e6e] rounded-full flex items-center justify-center text-[#00baf2] font-black text-[7px] shadow-xs tracking-tighter" title="Paytm">
+                      <span className="w-4.5 h-4.5 bg-[#002e6e] rounded-full flex items-center justify-center text-[#00baf2] font-black text-[6.5px] shadow-xs tracking-tighter" title="Paytm">
                         paytm
                       </span>
                     </div>
                   </div>
 
                   {/* Powered By Shiprocket Branding */}
-                  <span className="hidden sm:flex items-center text-[9px] text-white/50 font-medium space-x-1">
+                  <span className="hidden sm:flex items-center text-[8px] text-white/50 font-medium space-x-1">
                     <span>Powered By</span>
                     <span className="font-bold text-white/80">Shiprocket</span>
                   </span>
                 </button>
+
+                {/* Row 2, Col 3: Empty spacer matching Wishlist icon column */}
+                <div></div>
 
               </div>
             )}
@@ -409,7 +413,7 @@ const ProductDetail = () => {
               </p>
             )}
 
-            {/* 3 Trust Features Grid Below BUY NOW (Exact replica of screenshot) */}
+            {/* 3 Trust Features Grid Below BUY NOW (Partial COD Available, 7 days return policy, Secure payments) */}
             <div className="grid grid-cols-3 gap-2.5 sm:gap-4 pt-4 border-t border-neutral-100 dark:border-neutral-900 text-center">
               
               {/* 1. Partial COD Available */}
