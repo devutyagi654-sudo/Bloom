@@ -43,8 +43,9 @@ const Checkout = () => {
 
   // Helper for auth vs guest headers
   const getReqHeaders = () => {
-    if (token) {
-      return { Authorization: `Bearer ${token}` };
+    const validToken = token || localStorage.getItem('token');
+    if (validToken && validToken !== 'null' && validToken !== 'undefined' && String(validToken).trim() !== '') {
+      return { Authorization: `Bearer ${validToken}` };
     }
     const guestId = localStorage.getItem('guest_session_id') || ('guest_' + Date.now());
     return { 'x-guest-session-id': guestId };

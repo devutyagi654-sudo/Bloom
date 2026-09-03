@@ -18,9 +18,9 @@ export const getGuestSessionId = () => {
 };
 
 const getHeaders = (getState) => {
-  const token = getState().auth.token;
+  const token = getState()?.auth?.token || localStorage.getItem('token');
   const headers = {};
-  if (token) {
+  if (token && token !== 'null' && token !== 'undefined' && String(token).trim() !== '') {
     headers.Authorization = `Bearer ${token}`;
   } else {
     headers['x-guest-session-id'] = getGuestSessionId();
