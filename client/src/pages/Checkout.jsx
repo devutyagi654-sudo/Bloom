@@ -34,7 +34,7 @@ const Checkout = () => {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
-  const deliveryCharge = 0;
+  const deliveryCharge = paymentMethod === 'COD' ? 50 : 0;
   const finalTotal = subtotal + deliveryCharge;
 
   useEffect(() => {
@@ -90,8 +90,8 @@ const Checkout = () => {
         state,
         zip,
         paymentMethod: paymentMethod === 'COD' ? 'Cash on Delivery' : 'Razorpay',
-        shippingCharges: 0,
-        deliveryCharge: 0
+        shippingCharges: deliveryCharge,
+        deliveryCharge: deliveryCharge
       };
 
       const orderRes = await axios.post(
@@ -428,8 +428,8 @@ const Checkout = () => {
                       <span className="text-[10px] text-[#4A3226]/60 dark:text-[#F7E8DF]/50">Pay full amount in cash upon package delivery at your doorstep</span>
                     </div>
                   </div>
-                  <span className="text-[10px] bg-green-500/10 text-green-600 dark:text-green-400 font-bold uppercase px-2.5 py-1 rounded-full border border-green-500/20">
-                    FREE Delivery
+                  <span className="text-[10px] bg-amber-500/10 text-amber-600 dark:text-amber-400 font-bold uppercase px-2.5 py-1 rounded-full border border-amber-500/20">
+                    + ₹50 Delivery Fee
                   </span>
                 </div>
               </div>
@@ -475,7 +475,9 @@ const Checkout = () => {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-[#4A3226]/75 dark:text-[#F7E8DF]/65">Delivery Charges</span>
-                  <span className="font-semibold text-green-500">FREE</span>
+                  <span className={`font-semibold ${deliveryCharge === 0 ? "text-green-500" : "text-[#4A3226] dark:text-white"}`}>
+                    {deliveryCharge === 0 ? 'FREE' : formatDirectPrice(deliveryCharge)}
+                  </span>
                 </div>
                 <div className="flex justify-between border-t border-[#C98A63]/20 dark:border-[#C98A63]/15 pt-3 font-bold text-base text-[#4A3226] dark:text-white">
                   <span>Grand Total</span>

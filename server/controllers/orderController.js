@@ -326,7 +326,7 @@ const createOrder = async (req, res) => {
     const isCOD = String(paymentMethod || '').toUpperCase() === 'COD' || 
                   String(paymentMethod || '').toLowerCase() === 'cash on delivery';
 
-    const deliveryCharge = 0; // FREE Delivery for all orders
+    const deliveryCharge = isCOD ? 50 : 0;
     const totalAmount = subtotal + deliveryCharge;
 
     // PATH 1: CASH ON DELIVERY (COD) - 100% Cash on Delivery, no advance deposit needed
