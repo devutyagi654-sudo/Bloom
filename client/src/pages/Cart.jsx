@@ -224,7 +224,7 @@ const Cart = () => {
                     <span className="font-semibold text-green-500">FREE</span>
                   </div>
                   <div className="bg-[#F4DDD2]/40 dark:bg-[#120a06]/40 p-2.5 rounded-xl text-[10px] text-[#4A3226]/70 dark:text-[#F7E8DF]/60 leading-relaxed border border-[#C98A63]/20 dark:border-[#C98A63]/15">
-                    💡 Delivery is <strong>FREE</strong> for all prepaid orders worldwide.
+                    💡 Delivery is <strong>FREE</strong> for all Cash on Delivery (COD) orders.
                   </div>
                 </div>
 

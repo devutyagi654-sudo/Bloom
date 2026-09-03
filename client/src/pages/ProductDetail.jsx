@@ -422,7 +422,7 @@ const ProductDetail = () => {
                   <CheckSquare className="w-5 h-5 text-neutral-900 dark:text-white stroke-[2.5]" />
                 </div>
                 <span className="text-[11px] font-extrabold text-neutral-900 dark:text-white leading-tight">
-                  Partial COD Available
+                  Cash on Delivery (COD) Available
                 </span>
               </div>
 

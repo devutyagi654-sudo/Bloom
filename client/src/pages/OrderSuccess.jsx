@@ -65,7 +65,7 @@ const OrderSuccess = () => {
         </div>
 
         <p className="text-sm text-neutral-500 max-w-md mx-auto leading-relaxed">
-          Your payment has been verified successfully. An automated digital invoice receipt and insurance guarantee card have been prepared for shipment.
+          Your Cash on Delivery order has been confirmed successfully. An automated digital invoice receipt and shipping details have been sent to your email.
         </p>
 
         {loading ? (

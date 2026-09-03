@@ -28,13 +28,13 @@ const Checkout = () => {
   const [zip, setZip] = useState('');
 
   // Payment method state
-  const [paymentMethod, setPaymentMethod] = useState('Razorpay');
+  const [paymentMethod] = useState('COD');
 
   // Submit states
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
-  const deliveryCharge = paymentMethod === 'COD' ? 50 : 0;
+  const deliveryCharge = 0;
   const finalTotal = subtotal + deliveryCharge;
 
   useEffect(() => {
@@ -44,19 +44,6 @@ const Checkout = () => {
     }
     dispatch(fetchCart());
   }, [isAuthenticated, dispatch, navigate]);
-
-  // Load Razorpay Script
-  useEffect(() => {
-    const script = document.createElement('script');
-    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-    script.async = true;
-    document.body.appendChild(script);
-    return () => {
-      if (document.body.contains(script)) {
-        document.body.removeChild(script);
-      }
-    };
-  }, []);
 
   useEffect(() => {
     if (user) {
@@ -89,12 +76,11 @@ const Checkout = () => {
         city,
         state,
         zip,
-        paymentMethod,
-        shippingCharges: deliveryCharge,
-        deliveryCharge: deliveryCharge
+        paymentMethod: 'Cash on Delivery',
+        shippingCharges: 0,
+        deliveryCharge: 0
       };
 
-      // 1. Create order draft on backend
       const orderRes = await axios.post(
         `${API_URL}/orders`,
         orderPayload,
@@ -102,124 +88,16 @@ const Checkout = () => {
       );
 
       const orderData = orderRes.data;
-      const rzOrderId = orderData.razorpayOrderId || orderData.id || orderData._id;
-      const isCodDeposit = paymentMethod === 'COD' || orderData.isCodPrepaid;
+      const createdOrder = orderData.order || orderData;
+      const targetId = createdOrder._id || createdOrder.id;
 
-      if (orderData.mockMode) {
-        // Simulated payment confirmation in mock mode
-        const mockPromptMsg = isCodDeposit 
-          ? `BLC Sandbox Gateway: Press OK to simulate ₹100 online deposit payment for your COD order.`
-          : `BLC Sandbox Gateway: Press OK to simulate a successful Razorpay online transaction.`;
-
-        const confirmPayment = window.confirm(mockPromptMsg);
-        if (confirmPayment) {
-          const verifyRes = await axios.post(
-            `${API_URL}/payment/verify`,
-            {
-              razorpayOrderId: rzOrderId,
-              razorpayPaymentId: `pay_mock_${Math.random().toString(36).substring(2, 11)}`,
-              razorpaySignature: 'mock_signature',
-              razorpay_order_id: rzOrderId,
-              razorpay_payment_id: `pay_mock_${Math.random().toString(36).substring(2, 11)}`,
-              razorpay_signature: 'mock_signature',
-              orderData: orderPayload
-            },
-            { headers: { Authorization: `Bearer ${token}` } }
-          );
-
-          if (verifyRes.data.success) {
-            const createdOrder = verifyRes.data.order || verifyRes.data;
-            const targetId = createdOrder._id || createdOrder.id;
-
-            dispatch(clearCart());
-            navigate(`/order-success/${targetId}`, { state: { order: createdOrder } });
-          } else {
-            setError(verifyRes.data.message || 'Payment verification failed');
-          }
-        } else {
-          setError(isCodDeposit 
-            ? '₹100 Advance Payment for COD order was cancelled. Order not confirmed.' 
-            : 'Online payment cancelled by user.'
-          );
-        }
-        setSubmitting(false);
-        return;
-      }
-
-      // 2. Real Razorpay Checkout Modal
-      const options = {
-        key: orderData.keyId || import.meta.env.VITE_RAZORPAY_KEY_ID,
-        amount: orderData.amount,
-        currency: orderData.currency || 'INR',
-        name: 'bloomluxecollection',
-        description: isCodDeposit ? 'COD Order Advance Deposit (₹100)' : 'Luxury Jewelry & Timepieces Checkout',
-        image: 'https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=120&auto=format&fit=crop&q=80',
-        order_id: rzOrderId,
-        handler: async function (response) {
-          console.log('[RAZORPAY_CHECKOUT_RESPONSE]', response);
-          try {
-            const verifyPayload = {
-              razorpayOrderId: response.razorpay_order_id,
-              razorpayPaymentId: response.razorpay_payment_id,
-              razorpaySignature: response.razorpay_signature,
-              razorpay_order_id: response.razorpay_order_id,
-              razorpay_payment_id: response.razorpay_payment_id,
-              razorpay_signature: response.razorpay_signature,
-              orderData: orderPayload
-            };
-
-            const verifyRes = await axios.post(
-              `${API_URL}/payment/verify`,
-              verifyPayload,
-              { headers: { Authorization: `Bearer ${token}` } }
-            );
-
-            if (verifyRes.data.success || verifyRes.status === 200 || verifyRes.status === 201) {
-              const createdOrder = verifyRes.data.order || verifyRes.data;
-              const targetId = createdOrder._id || createdOrder.id;
-
-              dispatch(clearCart());
-              navigate(`/order-success/${targetId}`, { state: { order: createdOrder } });
-            } else {
-              setError(verifyRes.data.message || 'Payment verification failed');
-            }
-          } catch (err) {
-            console.error('[PAYMENT_VERIFICATION_ERROR]', err);
-            setError(err.response?.data?.message || 'Payment verification failed');
-          } finally {
-            setSubmitting(false);
-          }
-        },
-        prefill: {
-          name: fullName,
-          email: email,
-          contact: mobile
-        },
-        theme: {
-          color: '#C98A63'
-        },
-        modal: {
-          ondismiss: function() {
-            setError(isCodDeposit 
-              ? '₹100 deposit payment was cancelled. Your order was not confirmed.' 
-              : 'Razorpay checkout cancelled by user.'
-            );
-            setSubmitting(false);
-          }
-        }
-      };
-
-      const razorpayInstance = new window.Razorpay(options);
-      razorpayInstance.on('payment.failed', function (response) {
-        setError(response.error?.description || 'Payment Failed');
-        setSubmitting(false);
-      });
-      razorpayInstance.open();
-
+      dispatch(clearCart());
+      navigate(`/order-success/${targetId}`, { state: { order: createdOrder } });
     } catch (err) {
       console.error('[CHECKOUT_ERROR]', err);
-      const errMsg = err.response?.data?.message || err.response?.data?.error || err.message || 'Failed to initiate Razorpay checkout';
+      const errMsg = err.response?.data?.message || err.response?.data?.error || err.message || 'Failed to place order';
       setError(errMsg);
+    } finally {
       setSubmitting(false);
     }
   };
@@ -386,50 +264,24 @@ const Checkout = () => {
               <div className="flex items-center space-x-3 pb-4 border-b border-[#C98A63]/20 dark:border-[#C98A63]/15">
                 <CreditCard className="w-5 h-5 text-[#C98A63]" />
                 <h3 className="font-playfair text-lg font-bold tracking-wide text-[#4A3226] dark:text-white">
-                  2. Select Payment Method
+                  2. Payment Method
                 </h3>
               </div>
 
               <div className="space-y-3">
-                {/* Prepaid Option */}
+                {/* Cash on Delivery Option */}
                 <div 
-                  onClick={() => setPaymentMethod('Razorpay')}
-                  className={`p-4 rounded-xl border-2 cursor-pointer transition-all flex items-center justify-between ${
-                    paymentMethod === 'Razorpay' 
-                      ? 'border-[#C98A63] bg-[#F4DDD2]/40 dark:bg-[#120a06]/40 shadow-sm' 
-                      : 'border-neutral-200 dark:border-neutral-800 hover:border-[#C98A63]/50'
-                  }`}
+                  className="p-4 rounded-xl border-2 border-[#C98A63] bg-[#F4DDD2]/40 dark:bg-[#120a06]/40 shadow-sm flex items-center justify-between"
                 >
                   <div className="flex items-center space-x-3">
-                    <div className={`w-4 h-4 rounded-full border-4 ${paymentMethod === 'Razorpay' ? 'border-[#C98A63] bg-white' : 'border-neutral-400'}`}></div>
+                    <div className="w-4 h-4 rounded-full border-4 border-[#C98A63] bg-white"></div>
                     <div>
-                      <span className="font-bold text-xs text-[#4A3226] dark:text-white block">Prepaid Online Payment (Cards / UPI / NetBanking)</span>
-                      <span className="text-[10px] text-[#4A3226]/60 dark:text-[#F7E8DF]/50">Credit/Debit Cards, UPI, GooglePay, Paytm, PhonePe</span>
+                      <span className="font-bold text-xs text-[#4A3226] dark:text-white block">Cash on Delivery (COD)</span>
+                      <span className="text-[10px] text-[#4A3226]/60 dark:text-[#F7E8DF]/50">Pay full amount in cash upon package delivery at your doorstep</span>
                     </div>
                   </div>
                   <span className="text-[10px] bg-green-500/10 text-green-600 dark:text-green-400 font-bold uppercase px-2.5 py-1 rounded-full border border-green-500/20">
-                    FREE Delivery (₹0)
-                  </span>
-                </div>
-
-                {/* COD Option */}
-                <div 
-                  onClick={() => setPaymentMethod('COD')}
-                  className={`p-4 rounded-xl border-2 cursor-pointer transition-all flex items-center justify-between ${
-                    paymentMethod === 'COD' 
-                      ? 'border-[#C98A63] bg-[#F4DDD2]/40 dark:bg-[#120a06]/40 shadow-sm' 
-                      : 'border-neutral-200 dark:border-neutral-800 hover:border-[#C98A63]/50'
-                  }`}
-                >
-                  <div className="flex items-center space-x-3">
-                    <div className={`w-4 h-4 rounded-full border-4 ${paymentMethod === 'COD' ? 'border-[#C98A63] bg-white' : 'border-neutral-400'}`}></div>
-                    <div>
-                      <span className="font-bold text-xs text-[#4A3226] dark:text-white block">Cash on Delivery (COD + ₹100 Online Advance)</span>
-                      <span className="text-[10px] text-[#4A3226]/60 dark:text-[#F7E8DF]/50">Pay ₹100 online via Razorpay now & remaining balance on delivery</span>
-                    </div>
-                  </div>
-                  <span className="text-[10px] bg-amber-500/10 text-amber-600 dark:text-amber-400 font-bold uppercase px-2.5 py-1 rounded-full border border-amber-500/20">
-                    + ₹50 Delivery Fee
+                    FREE Delivery
                   </span>
                 </div>
               </div>
@@ -475,27 +327,12 @@ const Checkout = () => {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-[#4A3226]/75 dark:text-[#F7E8DF]/65">Delivery Charges</span>
-                  <span className={`font-semibold ${deliveryCharge === 0 ? "text-green-500" : "text-[#4A3226] dark:text-white"}`}>
-                    {deliveryCharge === 0 ? 'FREE' : formatDirectPrice(deliveryCharge)}
-                  </span>
+                  <span className="font-semibold text-green-500">FREE</span>
                 </div>
                 <div className="flex justify-between border-t border-[#C98A63]/20 dark:border-[#C98A63]/15 pt-3 font-bold text-base text-[#4A3226] dark:text-white">
                   <span>Grand Total</span>
                   <span className="text-[#C98A63]">{formatDirectPrice(finalTotal)}</span>
                 </div>
-
-                {paymentMethod === 'COD' && (
-                  <div className="bg-[#C98A63]/10 dark:bg-[#C98A63]/15 p-3 rounded-xl space-y-1.5 text-[11px] mt-2 border border-[#C98A63]/20">
-                    <div className="flex justify-between font-medium">
-                      <span className="text-[#4A3226]/80 dark:text-[#F7E8DF]/80">Razorpay Online Prepaid:</span>
-                      <span className="font-bold text-green-600 dark:text-green-400">{formatDirectPrice(Math.min(100, finalTotal))}</span>
-                    </div>
-                    <div className="flex justify-between font-medium">
-                      <span className="text-[#4A3226]/80 dark:text-[#F7E8DF]/80">Remaining Balance (COD):</span>
-                      <span className="font-bold text-[#C98A63]">{formatDirectPrice(Math.max(0, finalTotal - Math.min(100, finalTotal)))}</span>
-                    </div>
-                  </div>
-                )}
               </div>
 
               <button
@@ -506,7 +343,7 @@ const Checkout = () => {
                 className="w-full flex items-center justify-center space-x-2 btn-luxury py-4 font-semibold text-xs tracking-widest uppercase transition-all duration-300 shadow-lg mt-4 disabled:opacity-50"
               >
                 <CheckCircle className="w-4 h-4" />
-                <span>{submitting ? 'Processing Order...' : (paymentMethod === 'COD' ? `Pay ${formatDirectPrice(Math.min(100, finalTotal))} Online & Place COD Order` : 'Pay Online & Place Order')}</span>
+                <span>{submitting ? 'Placing Order...' : 'Place Order (Cash on Delivery)'}</span>
               </button>
 
             </div>
