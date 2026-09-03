@@ -8,9 +8,24 @@ const initialState = {
   error: null
 };
 
+export const getGuestSessionId = () => {
+  let guestId = localStorage.getItem('guest_session_id');
+  if (!guestId) {
+    guestId = 'guest_' + Math.random().toString(36).substring(2, 11) + Date.now();
+    localStorage.setItem('guest_session_id', guestId);
+  }
+  return guestId;
+};
+
 const getHeaders = (getState) => {
   const token = getState().auth.token;
-  return token ? { headers: { Authorization: `Bearer ${token}` } } : {};
+  const headers = {};
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  } else {
+    headers['x-guest-session-id'] = getGuestSessionId();
+  }
+  return { headers };
 };
 
 // Thunks

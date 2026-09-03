@@ -497,10 +497,11 @@ const getOrderDetails = async (req, res) => {
       return res.status(404).json({ message: 'Order not found' });
     }
 
-    const userId = req.user.id || req.user._id;
-    const isAdmin = String(req.user.role || '').toUpperCase() === 'ADMIN' || req.user.email === 'admin@blc.com';
+    const userId = req.user?.id || req.user?._id;
+    const isAdmin = String(req.user?.role || '').toUpperCase() === 'ADMIN' || req.user?.email === 'admin@blc.com';
+    const isGuest = req.user?.isGuest || req.user?.role === 'GUEST' || String(order.userId || '').startsWith('guest_');
     
-    if (String(order.userId) !== String(userId) && !isAdmin) {
+    if (String(order.userId) !== String(userId) && !isAdmin && !isGuest) {
       return res.status(403).json({ message: 'Access denied' });
     }
     
@@ -527,10 +528,11 @@ const generateInvoice = async (req, res) => {
       return res.status(404).json({ message: 'Order not found' });
     }
 
-    const userId = req.user.id || req.user._id;
-    const isAdmin = String(req.user.role || '').toUpperCase() === 'ADMIN' || req.user.email === 'admin@blc.com';
+    const userId = req.user?.id || req.user?._id;
+    const isAdmin = String(req.user?.role || '').toUpperCase() === 'ADMIN' || req.user?.email === 'admin@blc.com';
+    const isGuest = req.user?.isGuest || req.user?.role === 'GUEST' || String(order.userId || '').startsWith('guest_');
 
-    if (String(order.userId) !== String(userId) && !isAdmin) {
+    if (String(order.userId) !== String(userId) && !isAdmin && !isGuest) {
       return res.status(403).json({ message: 'Not authorized to download this invoice' });
     }
 

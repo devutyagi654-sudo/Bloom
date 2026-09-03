@@ -22,9 +22,11 @@ const OrderSuccess = () => {
           setLoading(false);
           return;
         }
-        const res = await axios.get(`${API_URL}/orders/${targetId}`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        const headers = token 
+          ? { Authorization: `Bearer ${token}` }
+          : { 'x-guest-session-id': localStorage.getItem('guest_session_id') || 'guest' };
+        
+        const res = await axios.get(`${API_URL}/orders/${targetId}`, { headers });
         setOrder(res.data);
       } catch (err) {
         console.error('Failed to load order details', err);
@@ -33,7 +35,7 @@ const OrderSuccess = () => {
       }
     };
 
-    if (token && (!order || id)) {
+    if (!order || id) {
       fetchOrderDetails();
     } else {
       setLoading(false);

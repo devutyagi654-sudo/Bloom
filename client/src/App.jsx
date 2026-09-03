@@ -65,25 +65,14 @@ function App() {
             <Route path="/register" element={<Register />} />
             <Route path="/contact" element={<Contact />} />
 
+            <Route path="/cart" element={<Cart />} />
+            <Route path="/checkout" element={<Checkout />} />
+            <Route path="/order-success/:id" element={<OrderSuccess />} />
+
             {/* Protected Customer Routes */}
-            <Route path="/cart" element={
-              <ProtectedRoute>
-                <Cart />
-              </ProtectedRoute>
-            } />
             <Route path="/wishlist" element={
               <ProtectedRoute>
                 <Wishlist />
-              </ProtectedRoute>
-            } />
-            <Route path="/checkout" element={
-              <ProtectedRoute>
-                <Checkout />
-              </ProtectedRoute>
-            } />
-            <Route path="/order-success/:id" element={
-              <ProtectedRoute>
-                <OrderSuccess />
               </ProtectedRoute>
             } />
             <Route path="/orders" element={

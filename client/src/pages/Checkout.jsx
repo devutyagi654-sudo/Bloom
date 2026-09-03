@@ -38,12 +38,17 @@ const Checkout = () => {
   const finalTotal = subtotal + deliveryCharge;
 
   useEffect(() => {
-    if (!isAuthenticated) {
-      navigate('/login');
-      return;
-    }
     dispatch(fetchCart());
-  }, [isAuthenticated, dispatch, navigate]);
+  }, [dispatch]);
+
+  // Helper for auth vs guest headers
+  const getReqHeaders = () => {
+    if (token) {
+      return { Authorization: `Bearer ${token}` };
+    }
+    const guestId = localStorage.getItem('guest_session_id') || ('guest_' + Date.now());
+    return { 'x-guest-session-id': guestId };
+  };
 
   // Load Razorpay SDK Script
   useEffect(() => {
@@ -97,7 +102,7 @@ const Checkout = () => {
       const orderRes = await axios.post(
         `${API_URL}/orders`,
         orderPayload,
-        { headers: { Authorization: `Bearer ${token}` } }
+        { headers: getReqHeaders() }
       );
 
       const orderData = orderRes.data;
@@ -131,7 +136,7 @@ const Checkout = () => {
               razorpay_signature: 'mock_signature',
               orderData: orderPayload
             },
-            { headers: { Authorization: `Bearer ${token}` } }
+            { headers: getReqHeaders() }
           );
 
           if (verifyRes.data.success) {
@@ -174,7 +179,7 @@ const Checkout = () => {
             const verifyRes = await axios.post(
               `${API_URL}/payment/verify`,
               verifyPayload,
-              { headers: { Authorization: `Bearer ${token}` } }
+              { headers: getReqHeaders() }
             );
 
             if (verifyRes.data.success || verifyRes.status === 200 || verifyRes.status === 201) {

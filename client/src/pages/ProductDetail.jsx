@@ -70,10 +70,6 @@ const ProductDetail = () => {
   };
 
   const handleAddToCart = async () => {
-    if (!isAuthenticated) {
-      navigate('/login');
-      return;
-    }
     if (!product || Number(product.stock) <= 0) return;
 
     if (isBanglesCategory(product) && !selectedSize) {
@@ -95,10 +91,6 @@ const ProductDetail = () => {
   const [buyNowLoading, setBuyNowLoading] = useState(false);
 
   const handleBuyNow = async () => {
-    if (!isAuthenticated) {
-      navigate('/login');
-      return;
-    }
     if (!product || Number(product.stock) <= 0) return;
 
     if (isBanglesCategory(product) && !selectedSize) {
