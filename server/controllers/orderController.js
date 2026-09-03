@@ -323,25 +323,108 @@ const createOrder = async (req, res) => {
       });
     }
     
-    const deliveryCharge = 0; // FREE Delivery on COD
+    const isCOD = String(paymentMethod || '').toUpperCase() === 'COD' || 
+                  String(paymentMethod || '').toLowerCase() === 'cash on delivery';
+
+    const deliveryCharge = 0; // FREE Delivery for all orders
     const totalAmount = subtotal + deliveryCharge;
 
-    // Deduct stock for each item directly on COD order placement
-    for (const item of orderItems) {
-      let product = null;
-      if (mongoose.Types.ObjectId.isValid(item.productId)) {
-        product = await Product.findById(item.productId);
+    // PATH 1: CASH ON DELIVERY (COD) - 100% Cash on Delivery, no advance deposit needed
+    if (isCOD) {
+      // Deduct stock for each product immediately
+      for (const item of orderItems) {
+        let product = null;
+        if (mongoose.Types.ObjectId.isValid(item.productId)) {
+          product = await Product.findById(item.productId);
+        }
+        if (!product) {
+          product = await Product.findOne({ _id: item.productId });
+        }
+        if (product) {
+          product.stock = Math.max(0, Number(product.stock) - Number(item.quantity));
+          await product.save();
+        }
       }
-      if (!product) {
-        product = await Product.findOne({ _id: item.productId });
+
+      // Create COD Order
+      const order = await Order.create({
+        userId,
+        fullName,
+        email: email.toLowerCase(),
+        mobile,
+        address,
+        city,
+        state,
+        zip,
+        paymentMethod: 'Cash on Delivery',
+        paymentStatus: 'Pending',
+        totalAmount: Number(totalAmount.toFixed(2)),
+        prepaidAmount: 0,
+        codAmount: Number(totalAmount.toFixed(2)),
+        shippingCharges: deliveryCharge,
+        deliveryCharge: deliveryCharge,
+        couponCode: '',
+        items: orderItems,
+        orderStatus: 'Order Confirmed',
+        razorpayOrderId: ''
+      });
+
+      // Clear user cart in database
+      await Cart.deleteMany({ userId });
+
+      await logOrderStatusHistory(order._id, '', 'Order Confirmed', 'System', 'Cash on Delivery (COD) order placed successfully');
+
+      try {
+        await sendOrderStatusEmail(order, 'Order Confirmed');
+      } catch (emailErr) {
+        console.error('Failed sending COD confirmation email:', emailErr.message);
       }
-      if (product) {
-        product.stock = Math.max(0, Number(product.stock) - Number(item.quantity));
-        await product.save();
-      }
+
+      const orderObj = order.toObject();
+      orderObj.id = orderObj._id;
+
+      return res.status(201).json({
+        success: true,
+        isCOD: true,
+        message: 'Cash on Delivery order placed successfully!',
+        order: orderObj,
+        ...orderObj
+      });
     }
 
-    // Create the Cash on Delivery (COD) Order
+    // PATH 2: PREPAID ONLINE PAYMENT (Razorpay)
+    let rzOrderId = '';
+    let mockMode = true;
+    const amountInPaise = Math.round(Number(totalAmount) * 100);
+
+    if (razorpay) {
+      try {
+        const rzOrder = await razorpay.orders.create({
+          amount: amountInPaise,
+          currency: 'INR',
+          receipt: `receipt_draft_${Date.now()}`
+        });
+        rzOrderId = rzOrder.id;
+        mockMode = false;
+      } catch (rzErr) {
+        console.error("========== RAZORPAY API ERROR ==========");
+        console.error("Status Code:", rzErr.statusCode);
+        console.error("Error Details:", rzErr.error || rzErr.message);
+
+        const rzMsg = rzErr.error?.description || rzErr.message || 'Authentication failed on Razorpay';
+
+        return res.status(500).json({
+          success: false,
+          message: `Razorpay order creation failed: ${rzMsg}. Please check RAZORPAY_KEY_ID & RAZORPAY_KEY_SECRET credentials.`,
+          error: rzMsg,
+          statusCode: rzErr.statusCode
+        });
+      }
+    } else {
+      console.warn("[RAZORPAY_WARNING] RAZORPAY credentials missing in environment. Using mock order ID.");
+      rzOrderId = `order_mock_${Math.random().toString(36).substring(2, 11)}`;
+    }
+
     const order = await Order.create({
       userId,
       fullName,
@@ -351,38 +434,32 @@ const createOrder = async (req, res) => {
       city,
       state,
       zip,
-      paymentMethod: 'Cash on Delivery',
+      paymentMethod: 'Razorpay',
       paymentStatus: 'Pending',
       totalAmount: Number(totalAmount.toFixed(2)),
-      prepaidAmount: 0,
-      codAmount: Number(totalAmount.toFixed(2)),
-      shippingCharges: deliveryCharge,
-      deliveryCharge: deliveryCharge,
+      prepaidAmount: Number(totalAmount.toFixed(2)),
+      codAmount: 0,
+      shippingCharges: 0,
+      deliveryCharge: 0,
       couponCode: '',
       items: orderItems,
-      orderStatus: 'Order Confirmed',
-      razorpayOrderId: ''
+      orderStatus: 'Pending',
+      razorpayOrderId: rzOrderId
     });
-
-    // Clear user cart in database
-    await Cart.deleteMany({ userId });
-
-    await logOrderStatusHistory(order._id, '', 'Order Confirmed', 'System', 'Cash on Delivery (COD) order placed successfully');
-
-    try {
-      await sendOrderStatusEmail(order, 'Order Confirmed');
-    } catch (emailErr) {
-      console.error('Failed sending COD confirmation email:', emailErr.message);
-    }
 
     const orderObj = order.toObject();
     orderObj.id = orderObj._id;
 
+    await logOrderStatusHistory(order._id, '', 'Pending', 'System', 'Prepaid order draft created awaiting Razorpay payment verification');
+
     return res.status(201).json({
-      success: true,
-      message: 'Cash on Delivery order placed successfully!',
-      order: orderObj,
-      ...orderObj
+      ...orderObj,
+      isCOD: false,
+      razorpayOrderId: rzOrderId,
+      keyId: process.env.RAZORPAY_KEY_ID || 'rzp_test_mockKey',
+      mockMode,
+      amount: amountInPaise,
+      currency: 'INR'
     });
   } catch (error) {
     console.error('[CREATE_ORDER_ERROR]', error);
